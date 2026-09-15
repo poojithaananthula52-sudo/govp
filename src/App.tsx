@@ -110,54 +110,74 @@ function Field({label,placeholder,type='text',value,onChange}:{label:string;plac
   return <label className="block text-sm font-bold text-slate-700">{label}<input required value={value} onChange={onChange} type={type} placeholder={placeholder} className="focus-ring mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm font-normal outline-none placeholder:text-slate-400"/></label>
 }
 
-function AppShell({page,go,children,savedCount,user,onLogout}:{page:Page;go:(p:Page)=>void;children:React.ReactNode;savedCount:number;user?:UserSession['user']|null;onLogout?:()=>void}){
+function AppShell({page,go,children,savedCount,user,onLogout}:{page:Page;go:(p:Page,id?:string)=>void;children:React.ReactNode;savedCount:number;user?:UserSession['user']|null;onLogout?:()=>void}){
   const [menu,setMenu]=useState(false);
   const initials = user?.full_name ? user.full_name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() : (user?.email?.slice(0,2).toUpperCase() || 'AS');
   const displayName = user?.full_name || user?.email?.split('@')[0] || 'User';
-  return <div className="min-h-screen bg-sand">
-    <header className="sticky top-0 z-20 border-b border-[#dde9e2] bg-white/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 lg:px-8">
-        <Logo/>
-        <nav className="hidden items-center gap-1 lg:flex">
-          {navItems.map(({label,page:p,icon:Icon})=><button onClick={()=>go(p)} key={p} className={`rounded-lg px-3 py-2 text-sm font-bold ${page===p?'bg-mint text-leaf':'text-slate-600 hover:bg-slate-50'}`}><span className="inline-flex items-center gap-1.5"><Icon size={15}/>{label}</span></button>)}
-        </nav>
-        <div className="flex items-center gap-2">
-          {user ? (
-            <>
-              <button onClick={()=>go('profile')} className="hidden items-center gap-2 rounded-xl border border-slate-200 px-2 py-1.5 text-sm font-bold sm:flex">
-                <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#d9eee1] text-leaf">{initials}</span>
-                <span className="mr-1 max-w-[120px] truncate">{displayName}</span>
+  const isAdmin = Boolean(user?.email?.toLowerCase().includes('admin'));
+
+  return <div className="min-h-screen bg-sand flex flex-col justify-between">
+    <div>
+      <header className="sticky top-0 z-20 border-b border-[#dde9e2] bg-white/95 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 lg:px-8">
+          <button onClick={()=>go('home')} className="text-left"><Logo/></button>
+          <nav className="hidden items-center gap-1 lg:flex">
+            {navItems.map(({label,page:p,icon:Icon})=><button onClick={()=>go(p)} key={p} className={`rounded-lg px-3 py-2 text-sm font-bold ${page===p?'bg-mint text-leaf':'text-slate-600 hover:bg-slate-50'}`}><span className="inline-flex items-center gap-1.5"><Icon size={15}/>{label}</span></button>)}
+            {isAdmin && (
+              <button onClick={()=>go('admin')} className={`rounded-lg px-3 py-2 text-sm font-bold ${page==='admin'?'bg-[#173a35] text-white':'text-amber-800 bg-amber-50 hover:bg-amber-100'}`}>
+                <span className="inline-flex items-center gap-1.5"><ShieldCheck size={15}/>Admin Panel</span>
               </button>
-              {onLogout && (
-                <button onClick={onLogout} title="Log out" className="hidden rounded-xl border border-slate-200 p-2 text-slate-500 hover:bg-slate-100 hover:text-red-600 sm:block">
-                  <LogOut size={16}/>
+            )}
+          </nav>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <button onClick={()=>go('admin')} className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-amber-100 px-3 py-2 text-xs font-extrabold text-amber-900 hover:bg-amber-200 transition">
+                <ShieldCheck size={14}/> Admin Panel
+              </button>
+            )}
+            {user ? (
+              <>
+                <button onClick={()=>go('profile')} className="hidden items-center gap-2 rounded-xl border border-slate-200 px-2 py-1.5 text-sm font-bold sm:flex">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#d9eee1] text-leaf">{initials}</span>
+                  <span className="mr-1 max-w-[120px] truncate">{displayName}</span>
                 </button>
-              )}
-            </>
-          ) : (
-            <div className="hidden gap-2 sm:flex">
-              <Button variant="ghost" onClick={()=>go('login')}>Log in</Button>
-              <Button onClick={()=>go('signup')}>Sign up</Button>
-            </div>
-          )}
-          <button className="rounded-lg p-2 lg:hidden" onClick={()=>setMenu(!menu)}>{menu?<X/>:<Menu/>}</button>
+                {onLogout && (
+                  <button onClick={onLogout} title="Log out" className="hidden rounded-xl border border-slate-200 p-2 text-slate-500 hover:bg-slate-100 hover:text-red-600 sm:block">
+                    <LogOut size={16}/>
+                  </button>
+                )}
+              </>
+            ) : (
+              <div className="hidden gap-2 sm:flex">
+                <Button variant="ghost" onClick={()=>go('login')}>Log in</Button>
+                <Button onClick={()=>go('signup')}>Sign up</Button>
+              </div>
+            )}
+            <button className="rounded-lg p-2 lg:hidden" onClick={()=>setMenu(!menu)}>{menu?<X/>:<Menu/>}</button>
+          </div>
         </div>
-      </div>
-      {menu&&<nav className="space-y-1 border-t bg-white p-3 lg:hidden">
-        {navItems.map(({label,page:p,icon:Icon})=><button key={p} onClick={()=>{go(p);setMenu(false)}} className="flex w-full items-center gap-3 rounded-lg p-3 text-sm font-bold text-slate-700"><Icon size={17}/>{label}{p==='saved'&&savedCount>0&&<span className="ml-auto rounded-full bg-mint px-2 text-xs text-leaf">{savedCount}</span>}</button>)}
-        {user ? (
-          <button onClick={()=>{onLogout?.();setMenu(false)}} className="flex w-full items-center gap-3 rounded-lg p-3 text-sm font-bold text-red-600 hover:bg-red-50"><LogOut size={17}/>Log out ({displayName})</button>
-        ) : (
-          <button onClick={()=>{go('login');setMenu(false)}} className="flex w-full items-center gap-3 rounded-lg p-3 text-sm font-bold text-leaf hover:bg-mint">Log in / Sign up</button>
-        )}
-      </nav>}
-    </header>
-    {children}
+        {menu&&<nav className="space-y-1 border-t bg-white p-3 lg:hidden">
+          {navItems.map(({label,page:p,icon:Icon})=><button key={p} onClick={()=>{go(p);setMenu(false)}} className="flex w-full items-center gap-3 rounded-lg p-3 text-sm font-bold text-slate-700"><Icon size={17}/>{label}{p==='saved'&&savedCount>0&&<span className="ml-auto rounded-full bg-mint px-2 text-xs text-leaf">{savedCount}</span>}</button>)}
+          {isAdmin && (
+            <button onClick={()=>{go('admin');setMenu(false)}} className="flex w-full items-center gap-3 rounded-lg bg-amber-50 p-3 text-sm font-bold text-amber-900"><ShieldCheck size={17}/>Admin Panel</button>
+          )}
+          {user ? (
+            <button onClick={()=>{onLogout?.();setMenu(false)}} className="flex w-full items-center gap-3 rounded-lg p-3 text-sm font-bold text-red-600 hover:bg-red-50"><LogOut size={17}/>Log out ({displayName})</button>
+          ) : (
+            <button onClick={()=>{go('login');setMenu(false)}} className="flex w-full items-center gap-3 rounded-lg p-3 text-sm font-bold text-leaf hover:bg-mint">Log in / Sign up</button>
+          )}
+        </nav>}
+      </header>
+      {children}
+    </div>
+    <Footer go={go}/>
   </div>
 }
 
 function SchemeCard({scheme,go,onSave,saved}:{scheme:Scheme;go:(p:Page,id?:string)=>void;onSave:(id:string)=>void;saved:boolean}){return <article className="card flex flex-col p-5 transition hover:-translate-y-0.5 hover:shadow-soft"><div className="flex items-start justify-between gap-3"><span className="rounded-full bg-mint px-2.5 py-1 text-xs font-bold text-leaf">{scheme.category}</span><button title="Save scheme" onClick={()=>onSave(scheme.id)} className={`rounded-lg p-1.5 ${saved?'bg-[#fff0ed] text-[#c54f3e]':'text-slate-400 hover:bg-mint hover:text-leaf'}`}><Heart size={18} fill={saved?'currentColor':'none'}/></button></div><h3 className="mt-4 text-lg font-extrabold leading-6">{scheme.name}</h3><p className="mt-1 text-xs font-semibold text-slate-500">{scheme.department}</p><p className="mt-3 text-sm leading-5 text-slate-600">{scheme.description}</p><div className="mt-4 space-y-2 border-t border-slate-100 pt-3 text-xs text-slate-500"><p className="flex gap-2"><UserRound size={15} className="shrink-0 text-leaf"/>{scheme.beneficiaries}</p><p className="flex gap-2"><MapPin size={15} className="shrink-0 text-leaf"/>{scheme.location}</p></div><div className="mt-5 flex gap-2"><Button className="flex-1 px-3" variant="secondary" onClick={()=>go('detail',scheme.id)}>View details</Button><Button className="flex-1 px-3" onClick={()=>go('eligibility',scheme.id)}>Check</Button></div></article>}
-function Dashboard({go,onSave,saved,schemes,user,onLogout}:{go:(p:Page,id?:string)=>void;onSave:(id:string)=>void;saved:string[];schemes:Scheme[];user?:UserSession['user']|null;onLogout?:()=>void}) { return <AppShell page="dashboard" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-7xl px-5 py-8 lg:px-8"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><p className="text-sm font-bold text-leaf">Connected to Supabase</p><h1 className="mt-1 text-3xl font-extrabold">Welcome, {user?.full_name || user?.email?.split('@')[0] || 'Citizen'} <span>👋</span></h1><p className="mt-2 text-sm text-slate-600">Logged in as <span className="font-semibold text-leaf">{user?.email || 'Guest'}</span>. Here’s a clear view of your scheme journey.</p></div><Button onClick={()=>go('directory')}><Search size={17}/> Find schemes</Button></div><div className="mt-7 grid gap-3 md:grid-cols-4">{[['Recommended for you','04',Sparkles,'Based on your profile'],['Saved schemes',String(saved.length).padStart(2,'0'),Heart,'Your shortlist'],['Eligibility checks','02',ClipboardCheck,'Recent checks'],['Documents ready','06',FileText,'Across saved schemes']].map(([t,n,Icon,d])=>{const C=Icon as typeof Search;return <button onClick={()=>go(t==='Saved schemes'?'saved':t==='Eligibility checks'?'history':'directory')} key={t as string} className="card text-left p-4 transition hover:border-[#9fcdb5]"><div className="flex justify-between"><p className="text-xs font-bold text-slate-500">{t as string}</p><C size={18} className="text-leaf"/></div><p className="mt-3 text-2xl font-extrabold">{n as string}</p><p className="mt-1 text-xs text-slate-500">{d as string}</p></button>})}</div><section className="mt-8 grid gap-6 xl:grid-cols-[1fr_320px]"><div><div className="flex items-center justify-between"><div><h2 className="text-xl font-extrabold">Recommended for you</h2><p className="mt-1 text-sm text-slate-500">Based on your profile: student · Telangana · urban</p></div><button onClick={()=>go('directory')} className="text-sm font-bold text-leaf">Explore all <ArrowRight className="inline" size={15}/></button></div><div className="mt-4 grid gap-4 md:grid-cols-2">{schemes.slice(0,2).map(s=><SchemeCard key={s.id} scheme={s} go={go} onSave={onSave} saved={saved.includes(s.id)}/>)}</div><div className="mt-7 flex items-center justify-between"><h2 className="text-xl font-extrabold">Recently viewed</h2><button onClick={()=>go('history')} className="text-sm font-bold text-leaf">View history</button></div><div className="mt-4 card flex items-center gap-4 p-4"><div className="grid h-11 w-11 place-items-center rounded-xl bg-mint text-leaf"><BookOpen size={20}/></div><div className="min-w-0 flex-1"><p className="font-bold">{schemes[2]?.name || 'National Scholarship Portal'}</p><p className="truncate text-sm text-slate-500">Scholarship pathways explained in one place</p></div><Button variant="secondary" onClick={()=>go('detail',schemes[2]?.id || 'nsp')}>Open</Button></div></div><aside className="space-y-5"><div className="rounded-2xl bg-[#173a35] p-5 text-white"><div className="flex items-center justify-between"><div className="grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-[#bfe1c9]"><Bot size={21}/></div><span className="text-xs font-bold text-white/50">AI ASSISTANT</span></div><h3 className="mt-5 text-xl font-extrabold">Not sure where to begin?</h3><p className="mt-2 text-sm leading-6 text-white/70">Ask how to apply, eligibility, or voice talk using ElevenLabs AI.</p><Button className="mt-5 w-full bg-white !text-[#173a35] hover:!bg-[#eaf5ef]" onClick={()=>go('chat')}>Ask Sahayak AI <ArrowRight size={16}/></Button></div><div className="card p-5"><div className="flex items-center justify-between"><h3 className="font-extrabold">Your next step</h3><Clock3 size={18} className="text-leaf"/></div><p className="mt-3 text-sm font-bold">Complete your profile</p><p className="mt-1 text-xs leading-5 text-slate-500">A few details will improve recommendation accuracy.</p><div className="mt-4 h-2 overflow-hidden rounded bg-slate-100"><div className="h-full w-2/3 rounded bg-leaf"/></div><div className="mt-2 flex justify-between text-xs text-slate-500"><span>4 of 6 details</span><button className="font-bold text-leaf" onClick={()=>go('profile')}>Complete</button></div></div><div className="card p-5"><div className="flex gap-3"><Bell size={19} className="mt-0.5 text-leaf"/><div><h3 className="font-extrabold">Alerts</h3><p className="mt-1 text-sm leading-5 text-slate-500">No new verified scheme updates.</p></div></div></div></aside></section></main></AppShell> }
+function Dashboard({go,onSave,saved,schemes,user,onLogout}:{go:(p:Page,id?:string)=>void;onSave:(id:string)=>void;saved:string[];schemes:Scheme[];user?:UserSession['user']|null;onLogout?:()=>void}) {
+  const isAdmin = Boolean(user?.email?.toLowerCase().includes('admin'));
+  return <AppShell page="dashboard" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-7xl px-5 py-8 lg:px-8"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><p className="text-sm font-bold text-leaf">Connected to Supabase</p><h1 className="mt-1 text-3xl font-extrabold">Welcome, {user?.full_name || user?.email?.split('@')[0] || 'Citizen'} <span>👋</span></h1><p className="mt-2 text-sm text-slate-600">Logged in as <span className="font-semibold text-leaf">{user?.email || 'Guest'}</span>. Here’s a clear view of your scheme journey.</p></div><div className="flex flex-wrap gap-2.5">{isAdmin && (<Button onClick={()=>go('admin')} className="bg-[#173a35] text-white hover:bg-[#204a43] shadow-sm"><Plus size={17}/> Add Scheme (Admin)</Button>)}<Button onClick={()=>go('directory')}><Search size={17}/> Find schemes</Button></div></div><div className="mt-7 grid gap-3 md:grid-cols-4">{[['Recommended for you','04',Sparkles,'Based on your profile'],['Saved schemes',String(saved.length).padStart(2,'0'),Heart,'Your shortlist'],['Eligibility checks','02',ClipboardCheck,'Recent checks'],['Documents ready','06',FileText,'Across saved schemes']].map(([t,n,Icon,d])=>{const C=Icon as typeof Search;return <button onClick={()=>go(t==='Saved schemes'?'saved':t==='Eligibility checks'?'history':'directory')} key={t as string} className="card text-left p-4 transition hover:border-[#9fcdb5]"><div className="flex justify-between"><p className="text-xs font-bold text-slate-500">{t as string}</p><C size={18} className="text-leaf"/></div><p className="mt-3 text-2xl font-extrabold">{n as string}</p><p className="mt-1 text-xs text-slate-500">{d as string}</p></button>})}</div><section className="mt-8 grid gap-6 xl:grid-cols-[1fr_320px]"><div><div className="flex items-center justify-between"><div><h2 className="text-xl font-extrabold">Recommended for you</h2><p className="mt-1 text-sm text-slate-500">Based on your profile: student · Telangana · urban</p></div><button onClick={()=>go('directory')} className="text-sm font-bold text-leaf">Explore all <ArrowRight className="inline" size={15}/></button></div><div className="mt-4 grid gap-4 md:grid-cols-2">{schemes.slice(0,2).map(s=><SchemeCard key={s.id} scheme={s} go={go} onSave={onSave} saved={saved.includes(s.id)}/>)}</div><div className="mt-7 flex items-center justify-between"><h2 className="text-xl font-extrabold">Recently viewed</h2><button onClick={()=>go('history')} className="text-sm font-bold text-leaf">View history</button></div><div className="mt-4 card flex items-center gap-4 p-4"><div className="grid h-11 w-11 place-items-center rounded-xl bg-mint text-leaf"><BookOpen size={20}/></div><div className="min-w-0 flex-1"><p className="font-bold">{schemes[2]?.name || 'National Scholarship Portal'}</p><p className="truncate text-sm text-slate-500">Scholarship pathways explained in one place</p></div><Button variant="secondary" onClick={()=>go('detail',schemes[2]?.id || 'nsp')}>Open</Button></div></div><aside className="space-y-5"><div className="rounded-2xl bg-[#173a35] p-5 text-white"><div className="flex items-center justify-between"><div className="grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-[#bfe1c9]"><Bot size={21}/></div><span className="text-xs font-bold text-white/50">AI ASSISTANT</span></div><h3 className="mt-5 text-xl font-extrabold">Not sure where to begin?</h3><p className="mt-2 text-sm leading-6 text-white/70">Ask how to apply, eligibility, or voice talk using ElevenLabs AI.</p><Button className="mt-5 w-full bg-white !text-[#173a35] hover:!bg-[#eaf5ef]" onClick={()=>go('chat')}>Ask Sahayak AI <ArrowRight size={16}/></Button></div><div className="card p-5"><div className="flex items-center justify-between"><h3 className="font-extrabold">Your next step</h3><Clock3 size={18} className="text-leaf"/></div><p className="mt-3 text-sm font-bold">Complete your profile</p><p className="mt-1 text-xs leading-5 text-slate-500">A few details will improve recommendation accuracy.</p><div className="mt-4 h-2 overflow-hidden rounded bg-slate-100"><div className="h-full w-2/3 rounded bg-leaf"/></div><div className="mt-2 flex justify-between text-xs text-slate-500"><span>4 of 6 details</span><button className="font-bold text-leaf" onClick={()=>go('profile')}>Complete</button></div></div><div className="card p-5"><div className="flex gap-3"><Bell size={19} className="mt-0.5 text-leaf"/><div><h3 className="font-extrabold">Alerts</h3><p className="mt-1 text-sm leading-5 text-slate-500">No new verified scheme updates.</p></div></div></div></aside></section></main></AppShell> }
 
 function Directory({go,onSave,saved,schemes}:{go:(p:Page,id?:string)=>void;onSave:(id:string)=>void;saved:string[];schemes:Scheme[]}) {
   const [query,setQuery]=useState('');
@@ -602,8 +622,8 @@ function Chat({go,saved,schemeId,schemes,user,onLogout}:{go:(p:Page,id?:string)=
   </AppShell>;
 }
 
-function Admin({go,schemes,onRefresh}:{go:(p:Page,id?:string)=>void;schemes:Scheme[];onRefresh:()=>Promise<void>}) {
-  const [authed, setAuthed] = useState(false);
+function Admin({go,schemes,onRefresh,user}:{go:(p:Page,id?:string)=>void;schemes:Scheme[];onRefresh:()=>Promise<void>;user?:UserSession['user']|null}) {
+  const [authed, setAuthed] = useState(() => Boolean(user?.email?.toLowerCase().includes('admin')));
   const [adminEmail, setAdminEmail] = useState('admin@sahayakai.co.in');
   const [adminPassword, setAdminPassword] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -1036,6 +1056,6 @@ export default function App(){
   if(page==='history')return <History go={go} saved={saved} user={user} onLogout={logout}/>;
   if(page==='profile')return <Profile go={go} saved={saved} user={user} onLogout={logout}/>;
   if(page==='chat')return <Chat go={go} saved={saved} schemeId={selected} schemes={schemes} user={user} onLogout={logout}/>;
-  return <Admin go={go} schemes={schemes} onRefresh={loadSchemes}/>;
+  return <Admin go={go} schemes={schemes} onRefresh={loadSchemes} user={user}/>;
 }
 
