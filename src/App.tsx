@@ -4,7 +4,7 @@ import {
   ArrowRight, BadgeCheck, Bell, BookOpen, Bot, Check, CheckCircle2, ChevronRight,
   CircleHelp, ClipboardCheck, FileText, Heart, Landmark, LogOut, Menu, Search,
   ShieldCheck, Sparkles, UserRound, X, ExternalLink, MapPin, Clock3, SlidersHorizontal,
-  Mic, MicOff, Volume2, VolumeX, Plus, Trash2, Edit3, RefreshCw, Send
+  Mic, MicOff, Volume2, VolumeX, Plus, Trash2, Edit3, RefreshCw, Send, LayoutDashboard
 } from 'lucide-react'
 
 type Page = 'home' | 'login' | 'signup' | 'forgot' | 'dashboard' | 'directory' | 'detail' | 'eligibility' | 'saved' | 'history' | 'profile' | 'chat' | 'admin'
@@ -28,19 +28,68 @@ function Button({ children, onClick, variant = 'primary', className = '', type =
   return <button disabled={disabled} type={type} onClick={onClick} className={`focus-ring inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition disabled:opacity-50 disabled:cursor-not-allowed ${styles} ${className}`}>{children}</button>
 }
 
-function Landing({ go }: { go: (p: Page) => void }) {
+function Landing({ go, user }: { go: (p: Page) => void; user?: UserSession['user']|null }) {
   return <div className="min-h-screen bg-sand">
-    <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 lg:px-8"><Logo/><nav className="hidden gap-7 md:flex"><button className="navlink" onClick={() => document.getElementById('how')?.scrollIntoView({ behavior: 'smooth' })}>How it works</button><button className="navlink" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}>Features</button><button className="navlink" onClick={() => go('directory')}>Scheme directory</button></nav><div className="flex gap-2"><Button variant="ghost" onClick={() => go('login')}>Log in</Button><Button onClick={() => go('signup')}>Get started <ArrowRight size={16}/></Button></div></header>
+    <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 lg:px-8">
+      <button onClick={() => go(user ? 'dashboard' : 'home')} className="text-left"><Logo/></button>
+      <nav className="hidden gap-7 md:flex">
+        <button className="navlink" onClick={() => document.getElementById('how')?.scrollIntoView({ behavior: 'smooth' })}>How it works</button>
+        <button className="navlink" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}>Features</button>
+        <button className="navlink" onClick={() => go('directory')}>Scheme directory</button>
+      </nav>
+      {user ? (
+        <div className="flex items-center gap-2.5">
+          <button onClick={() => go('profile')} className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition">
+            <span className="grid h-6 w-6 place-items-center rounded-lg bg-[#d9eee1] text-leaf text-[10px]">
+              {user.full_name ? user.full_name.slice(0, 2).toUpperCase() : user.email.slice(0, 2).toUpperCase()}
+            </span>
+            <span className="max-w-[120px] truncate">{user.full_name || user.email.split('@')[0]}</span>
+          </button>
+          <Button onClick={() => go('dashboard')}>
+            <LayoutDashboard size={15}/> My Dashboard
+          </Button>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <Button variant="ghost" onClick={() => go('login')}>Log in</Button>
+          <Button onClick={() => go('signup')}>Get started <ArrowRight size={16}/></Button>
+        </div>
+      )}
+    </header>
     <main>
-      <section className="grain relative overflow-hidden"><div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 lg:grid-cols-[1.08fr_.92fr] lg:px-8 lg:py-24"><div className="max-w-2xl"><div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#c9e1d5] bg-white px-3 py-1.5 text-xs font-bold text-leaf"><Sparkles size={14}/> Designed around official scheme information</div><h1 className="text-4xl font-extrabold leading-[1.08] tracking-tight text-ink sm:text-6xl">Your AI Guide to <span className="text-leaf">Government Schemes.</span></h1><p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">Discover schemes that may fit your needs, understand eligibility in plain language, and follow the right official path to apply.</p><div className="mt-8 flex flex-wrap gap-3"><Button onClick={() => go('directory')}>Find schemes <Search size={17}/></Button><Button variant="secondary" onClick={() => go('eligibility')}>Check eligibility <ClipboardCheck size={17}/></Button></div><div className="mt-10 flex flex-wrap gap-x-7 gap-y-3 text-sm font-semibold text-slate-600"><span className="flex items-center gap-2"><CheckCircle2 size={18} className="text-leaf"/> Clear, simple guidance</span><span className="flex items-center gap-2"><CheckCircle2 size={18} className="text-leaf"/> Official sources first</span></div></div>
+      <section className="grain relative overflow-hidden"><div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 lg:grid-cols-[1.08fr_.92fr] lg:px-8 lg:py-24"><div className="max-w-2xl"><div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#c9e1d5] bg-white px-3 py-1.5 text-xs font-bold text-leaf"><Sparkles size={14}/> Designed around official scheme information</div><h1 className="text-4xl font-extrabold leading-[1.08] tracking-tight text-ink sm:text-6xl">Your AI Guide to <span className="text-leaf">Government Schemes.</span></h1><p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">Discover schemes that may fit your needs, understand eligibility in plain language, and follow the right official path to apply.</p>
+      {user ? (
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Button onClick={() => go('dashboard')}><LayoutDashboard size={17}/> Open Citizen Dashboard <ArrowRight size={17}/></Button>
+          <Button variant="secondary" onClick={() => go('directory')}>Browse schemes <Search size={17}/></Button>
+        </div>
+      ) : (
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Button onClick={() => go('directory')}>Find schemes <Search size={17}/></Button>
+          <Button variant="secondary" onClick={() => go('eligibility')}>Check eligibility <ClipboardCheck size={17}/></Button>
+        </div>
+      )}
+      <div className="mt-10 flex flex-wrap gap-x-7 gap-y-3 text-sm font-semibold text-slate-600"><span className="flex items-center gap-2"><CheckCircle2 size={18} className="text-leaf"/> Clear, simple guidance</span><span className="flex items-center gap-2"><CheckCircle2 size={18} className="text-leaf"/> Official sources first</span></div></div>
       <div className="relative mx-auto w-full max-w-md"><div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[#d3eadc]"></div><div className="shadow-soft relative rounded-[28px] border border-[#d9e8df] bg-white p-5"><div className="flex items-center justify-between border-b border-slate-100 pb-4"><div className="flex items-center gap-2"><div className="grid h-9 w-9 place-items-center rounded-full bg-mint text-leaf"><Bot size={18}/></div><div><b className="text-sm">Sahayak AI</b><p className="text-xs text-leaf">● Ready to help</p></div></div><span className="rounded-full bg-mint px-2.5 py-1 text-[10px] font-bold text-leaf">GUIDED</span></div><div className="space-y-3 py-5"><div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-slate-100 p-3 text-sm leading-5 text-slate-700">I can help you find a scheme, check what you may qualify for, or prepare your documents.</div><div className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm bg-leaf p-3 text-sm leading-5 text-white">I am a student. What support is available?</div><div className="rounded-xl border border-[#cfe5d9] bg-[#f4faf6] p-3"><div className="flex items-center gap-2 text-sm font-bold"><BadgeCheck size={18} className="text-leaf"/> Let’s narrow it down</div><p className="mt-1 text-xs leading-5 text-slate-600">Share your state, course and family income to see relevant official options.</p></div></div><div className="flex gap-2 rounded-xl border border-slate-200 p-2 text-xs text-slate-400"><span className="flex-1 px-1 py-1">Ask about schemes...</span><div className="grid h-7 w-7 place-items-center rounded-lg bg-leaf text-white"><ArrowRight size={14}/></div></div></div></div></div></section>
       <section id="how" className="mx-auto max-w-7xl px-5 py-18 lg:px-8"><div className="mb-10 flex items-end justify-between"><div><p className="text-sm font-bold uppercase tracking-widest text-leaf">A clear path forward</p><h2 className="mt-2 text-3xl font-extrabold">How Sahayak AI works</h2></div><p className="hidden max-w-xs text-sm leading-6 text-slate-500 md:block">Simple steps, with government decisions always remaining with the relevant authority.</p></div><div className="grid gap-5 md:grid-cols-3">{[['01','Tell us about you','Build a private profile with only the details needed for personalised guidance.'],['02','Explore relevant schemes','Search trusted scheme records and compare the key criteria.'],['03','Apply with confidence','Prepare documents and use the official application route.']].map(([n,t,d])=><div className="card p-6" key={n}><span className="text-3xl font-extrabold text-[#b9dccc]">{n}</span><h3 className="mt-6 text-lg font-bold">{t}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{d}</p><ChevronRight className="mt-5 text-leaf" size={19}/></div>)}</div></section>
       <section id="features" className="bg-[#eaf3ef]"><div className="mx-auto max-w-7xl px-5 py-16 lg:px-8"><p className="text-center text-sm font-bold uppercase tracking-widest text-leaf">Built to be useful</p><h2 className="mt-2 text-center text-3xl font-extrabold">Everything you need to get started</h2><div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[[Search,'Scheme discovery','Search by need, category, location and more.'],[ClipboardCheck,'Eligibility guidance','See matched criteria and what information is missing.'],[FileText,'Document checklist','Track the documents you already have.'],[ShieldCheck,'Official-source focus','Get links and guidance distinct from the official process.']].map(([Icon,t,d])=>{const C=Icon as typeof Search;return <div className="rounded-2xl bg-white p-5" key={t as string}><div className="grid h-10 w-10 place-items-center rounded-xl bg-mint text-leaf"><C size={20}/></div><h3 className="mt-4 font-bold">{t as string}</h3><p className="mt-1.5 text-sm leading-5 text-slate-600">{d as string}</p></div>})}</div></div></section>
       <section className="mx-auto max-w-7xl px-5 py-10 lg:px-8"><div className="flex gap-3 rounded-2xl border border-[#eedfa9] bg-[#fff8df] p-5 text-sm leading-6 text-[#6b5817]"><CircleHelp className="mt-0.5 shrink-0" size={20}/><p><b>Important:</b> Sahayak AI provides informational guidance based on available scheme data. It does not guarantee eligibility, benefits, or approval. Final decisions are made only by the relevant government authority.</p></div></section>
-    </main><Footer go={go}/></div>
+    </main><Footer go={go} user={user}/></div>
 }
 
-function Footer({go}:{go:(p:Page)=>void}) { return <footer className="bg-[#173a35] px-5 py-9 text-white"><div className="mx-auto flex max-w-7xl flex-col gap-5 md:flex-row md:items-center md:justify-between"><Logo light/><p className="max-w-md text-xs leading-5 text-white/65">A guidance platform for discovering government schemes. Always verify details through official government sources.</p><button onClick={()=>go('admin')} className="text-xs font-semibold text-white/60 hover:text-white">Admin access</button></div></footer> }
+function Footer({go, user}:{go:(p:Page)=>void; user?: UserSession['user']|null}) {
+  return <footer className="bg-[#173a35] px-5 py-9 text-white">
+    <div className="mx-auto flex max-w-7xl flex-col gap-5 md:flex-row md:items-center md:justify-between">
+      <button onClick={()=>go(user ? 'dashboard' : 'home')} className="text-left"><Logo light/></button>
+      <p className="max-w-md text-xs leading-5 text-white/65">A guidance platform for discovering government schemes. Always verify details through official government sources.</p>
+      <div className="flex items-center gap-4">
+        {user && <button onClick={()=>go('dashboard')} className="text-xs font-semibold text-white/70 hover:text-white">Citizen Dashboard</button>}
+        <button onClick={()=>go('directory')} className="text-xs font-semibold text-white/70 hover:text-white">Schemes</button>
+        <button onClick={()=>go('admin')} className="text-xs font-semibold text-white/60 hover:text-white">Admin access</button>
+      </div>
+    </div>
+  </footer>
+}
 
 function Auth({ page, go, login }: { page: Page; go:(p:Page)=>void; login:(user: UserSession['user'])=>void }) {
   const [sent,setSent]=useState(false);
@@ -116,15 +165,34 @@ function AppShell({page,go,children,savedCount,user,onLogout}:{page:Page;go:(p:P
   const displayName = user?.full_name || user?.email?.split('@')[0] || 'User';
   const isAdmin = Boolean(user?.email?.toLowerCase().includes('admin'));
 
+  const currentNavItems = [
+    ...(user ? [{ label: 'Dashboard', page: 'dashboard' as Page, icon: LayoutDashboard }] : []),
+    { label: 'Find schemes', page: 'directory' as Page, icon: Search },
+    { label: 'Check eligibility', page: 'eligibility' as Page, icon: ClipboardCheck },
+    { label: 'Saved schemes', page: 'saved' as Page, icon: Heart },
+    { label: 'Ask Sahayak AI', page: 'chat' as Page, icon: Bot }
+  ];
+
   return <div className="min-h-screen bg-sand flex flex-col justify-between">
     <div>
       <header className="sticky top-0 z-20 border-b border-[#dde9e2] bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 lg:px-8">
-          <button onClick={()=>go('home')} className="text-left"><Logo/></button>
+          <button onClick={()=>go(user ? 'dashboard' : 'home')} className="text-left"><Logo/></button>
           <nav className="hidden items-center gap-1 lg:flex">
-            {navItems.map(({label,page:p,icon:Icon})=><button onClick={()=>go(p)} key={p} className={`rounded-lg px-3 py-2 text-sm font-bold ${page===p?'bg-mint text-leaf':'text-slate-600 hover:bg-slate-50'}`}><span className="inline-flex items-center gap-1.5"><Icon size={15}/>{label}</span></button>)}
+            {currentNavItems.map(({label,page:p,icon:Icon})=>(
+              <button
+                onClick={()=>go(p)}
+                key={p}
+                className={`rounded-lg px-3 py-2 text-sm font-bold transition ${page===p?'bg-mint text-leaf':'text-slate-600 hover:bg-slate-50'}`}
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon size={15}/>{label}
+                  {p==='saved'&&savedCount>0&&<span className="ml-1 rounded-full bg-leaf px-1.5 py-0.2 text-[10px] font-extrabold text-white">{savedCount}</span>}
+                </span>
+              </button>
+            ))}
             {isAdmin && (
-              <button onClick={()=>go('admin')} className={`rounded-lg px-3 py-2 text-sm font-bold ${page==='admin'?'bg-[#173a35] text-white':'text-amber-800 bg-amber-50 hover:bg-amber-100'}`}>
+              <button onClick={()=>go('admin')} className={`rounded-lg px-3 py-2 text-sm font-bold transition ${page==='admin'?'bg-[#173a35] text-white':'text-amber-800 bg-amber-50 hover:bg-amber-100'}`}>
                 <span className="inline-flex items-center gap-1.5"><ShieldCheck size={15}/>Admin Panel</span>
               </button>
             )}
@@ -137,12 +205,12 @@ function AppShell({page,go,children,savedCount,user,onLogout}:{page:Page;go:(p:P
             )}
             {user ? (
               <>
-                <button onClick={()=>go('profile')} className="hidden items-center gap-2 rounded-xl border border-slate-200 px-2 py-1.5 text-sm font-bold sm:flex">
-                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#d9eee1] text-leaf">{initials}</span>
+                <button onClick={()=>go('profile')} className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-sm font-bold hover:bg-slate-50 transition sm:flex">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#d9eee1] text-leaf text-xs">{initials}</span>
                   <span className="mr-1 max-w-[120px] truncate">{displayName}</span>
                 </button>
                 {onLogout && (
-                  <button onClick={onLogout} title="Log out" className="hidden rounded-xl border border-slate-200 p-2 text-slate-500 hover:bg-slate-100 hover:text-red-600 sm:block">
+                  <button onClick={onLogout} title="Log out" className="hidden rounded-xl border border-slate-200 bg-white p-2 text-slate-500 hover:bg-slate-100 hover:text-red-600 transition sm:block">
                     <LogOut size={16}/>
                   </button>
                 )}
@@ -157,7 +225,12 @@ function AppShell({page,go,children,savedCount,user,onLogout}:{page:Page;go:(p:P
           </div>
         </div>
         {menu&&<nav className="space-y-1 border-t bg-white p-3 lg:hidden">
-          {navItems.map(({label,page:p,icon:Icon})=><button key={p} onClick={()=>{go(p);setMenu(false)}} className="flex w-full items-center gap-3 rounded-lg p-3 text-sm font-bold text-slate-700"><Icon size={17}/>{label}{p==='saved'&&savedCount>0&&<span className="ml-auto rounded-full bg-mint px-2 text-xs text-leaf">{savedCount}</span>}</button>)}
+          {currentNavItems.map(({label,page:p,icon:Icon})=>(
+            <button key={p} onClick={()=>{go(p);setMenu(false)}} className={`flex w-full items-center gap-3 rounded-lg p-3 text-sm font-bold ${page===p ? 'bg-mint text-leaf' : 'text-slate-700 hover:bg-slate-50'}`}>
+              <Icon size={17}/>{label}
+              {p==='saved'&&savedCount>0&&<span className="ml-auto rounded-full bg-mint px-2 text-xs text-leaf">{savedCount}</span>}
+            </button>
+          ))}
           {isAdmin && (
             <button onClick={()=>{go('admin');setMenu(false)}} className="flex w-full items-center gap-3 rounded-lg bg-amber-50 p-3 text-sm font-bold text-amber-900"><ShieldCheck size={17}/>Admin Panel</button>
           )}
@@ -170,37 +243,410 @@ function AppShell({page,go,children,savedCount,user,onLogout}:{page:Page;go:(p:P
       </header>
       {children}
     </div>
-    <Footer go={go}/>
+    <Footer go={go} user={user}/>
   </div>
 }
 
-function SchemeCard({scheme,go,onSave,saved}:{scheme:Scheme;go:(p:Page,id?:string)=>void;onSave:(id:string)=>void;saved:boolean}){return <article className="card flex flex-col p-5 transition hover:-translate-y-0.5 hover:shadow-soft"><div className="flex items-start justify-between gap-3"><span className="rounded-full bg-mint px-2.5 py-1 text-xs font-bold text-leaf">{scheme.category}</span><button title="Save scheme" onClick={()=>onSave(scheme.id)} className={`rounded-lg p-1.5 ${saved?'bg-[#fff0ed] text-[#c54f3e]':'text-slate-400 hover:bg-mint hover:text-leaf'}`}><Heart size={18} fill={saved?'currentColor':'none'}/></button></div><h3 className="mt-4 text-lg font-extrabold leading-6">{scheme.name}</h3><p className="mt-1 text-xs font-semibold text-slate-500">{scheme.department}</p><p className="mt-3 text-sm leading-5 text-slate-600">{scheme.description}</p><div className="mt-4 space-y-2 border-t border-slate-100 pt-3 text-xs text-slate-500"><p className="flex gap-2"><UserRound size={15} className="shrink-0 text-leaf"/>{scheme.beneficiaries}</p><p className="flex gap-2"><MapPin size={15} className="shrink-0 text-leaf"/>{scheme.location}</p></div><div className="mt-5 flex gap-2"><Button className="flex-1 px-3" variant="secondary" onClick={()=>go('detail',scheme.id)}>View details</Button><Button className="flex-1 px-3" onClick={()=>go('eligibility',scheme.id)}>Check</Button></div></article>}
-function Dashboard({go,onSave,saved,schemes,user,onLogout}:{go:(p:Page,id?:string)=>void;onSave:(id:string)=>void;saved:string[];schemes:Scheme[];user?:UserSession['user']|null;onLogout?:()=>void}) {
-  const isAdmin = Boolean(user?.email?.toLowerCase().includes('admin'));
-  return <AppShell page="dashboard" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-7xl px-5 py-8 lg:px-8"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><p className="text-sm font-bold text-leaf">Connected to Supabase</p><h1 className="mt-1 text-3xl font-extrabold">Welcome, {user?.full_name || user?.email?.split('@')[0] || 'Citizen'} <span>👋</span></h1><p className="mt-2 text-sm text-slate-600">Logged in as <span className="font-semibold text-leaf">{user?.email || 'Guest'}</span>. Here’s a clear view of your scheme journey.</p></div><div className="flex flex-wrap gap-2.5">{isAdmin && (<Button onClick={()=>go('admin')} className="bg-[#173a35] text-white hover:bg-[#204a43] shadow-sm"><Plus size={17}/> Add Scheme (Admin)</Button>)}<Button onClick={()=>go('directory')}><Search size={17}/> Find schemes</Button></div></div><div className="mt-7 grid gap-3 md:grid-cols-4">{[['Recommended for you','04',Sparkles,'Based on your profile'],['Saved schemes',String(saved.length).padStart(2,'0'),Heart,'Your shortlist'],['Eligibility checks','02',ClipboardCheck,'Recent checks'],['Documents ready','06',FileText,'Across saved schemes']].map(([t,n,Icon,d])=>{const C=Icon as typeof Search;return <button onClick={()=>go(t==='Saved schemes'?'saved':t==='Eligibility checks'?'history':'directory')} key={t as string} className="card text-left p-4 transition hover:border-[#9fcdb5]"><div className="flex justify-between"><p className="text-xs font-bold text-slate-500">{t as string}</p><C size={18} className="text-leaf"/></div><p className="mt-3 text-2xl font-extrabold">{n as string}</p><p className="mt-1 text-xs text-slate-500">{d as string}</p></button>})}</div><section className="mt-8 grid gap-6 xl:grid-cols-[1fr_320px]"><div><div className="flex items-center justify-between"><div><h2 className="text-xl font-extrabold">Recommended for you</h2><p className="mt-1 text-sm text-slate-500">Based on your profile: student · Telangana · urban</p></div><button onClick={()=>go('directory')} className="text-sm font-bold text-leaf">Explore all <ArrowRight className="inline" size={15}/></button></div><div className="mt-4 grid gap-4 md:grid-cols-2">{schemes.slice(0,2).map(s=><SchemeCard key={s.id} scheme={s} go={go} onSave={onSave} saved={saved.includes(s.id)}/>)}</div><div className="mt-7 flex items-center justify-between"><h2 className="text-xl font-extrabold">Recently viewed</h2><button onClick={()=>go('history')} className="text-sm font-bold text-leaf">View history</button></div><div className="mt-4 card flex items-center gap-4 p-4"><div className="grid h-11 w-11 place-items-center rounded-xl bg-mint text-leaf"><BookOpen size={20}/></div><div className="min-w-0 flex-1"><p className="font-bold">{schemes[2]?.name || 'National Scholarship Portal'}</p><p className="truncate text-sm text-slate-500">Scholarship pathways explained in one place</p></div><Button variant="secondary" onClick={()=>go('detail',schemes[2]?.id || 'nsp')}>Open</Button></div></div><aside className="space-y-5"><div className="rounded-2xl bg-[#173a35] p-5 text-white"><div className="flex items-center justify-between"><div className="grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-[#bfe1c9]"><Bot size={21}/></div><span className="text-xs font-bold text-white/50">AI ASSISTANT</span></div><h3 className="mt-5 text-xl font-extrabold">Not sure where to begin?</h3><p className="mt-2 text-sm leading-6 text-white/70">Ask how to apply, eligibility, or voice talk using ElevenLabs AI.</p><Button className="mt-5 w-full bg-white !text-[#173a35] hover:!bg-[#eaf5ef]" onClick={()=>go('chat')}>Ask Sahayak AI <ArrowRight size={16}/></Button></div><div className="card p-5"><div className="flex items-center justify-between"><h3 className="font-extrabold">Your next step</h3><Clock3 size={18} className="text-leaf"/></div><p className="mt-3 text-sm font-bold">Complete your profile</p><p className="mt-1 text-xs leading-5 text-slate-500">A few details will improve recommendation accuracy.</p><div className="mt-4 h-2 overflow-hidden rounded bg-slate-100"><div className="h-full w-2/3 rounded bg-leaf"/></div><div className="mt-2 flex justify-between text-xs text-slate-500"><span>4 of 6 details</span><button className="font-bold text-leaf" onClick={()=>go('profile')}>Complete</button></div></div><div className="card p-5"><div className="flex gap-3"><Bell size={19} className="mt-0.5 text-leaf"/><div><h3 className="font-extrabold">Alerts</h3><p className="mt-1 text-sm leading-5 text-slate-500">No new verified scheme updates.</p></div></div></div></aside></section></main></AppShell> }
+function SchemeCard({scheme,go,onSave,saved,isNew=false}:{scheme:Scheme;go:(p:Page,id?:string)=>void;onSave:(id:string)=>void;saved:boolean;isNew?:boolean}){
+  return <article className="card flex flex-col p-5 transition hover:-translate-y-0.5 hover:shadow-soft relative">
+    <div className="flex items-start justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="rounded-full bg-mint px-2.5 py-0.5 text-xs font-bold text-leaf">{scheme.category}</span>
+        {isNew && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold text-amber-800 uppercase tracking-wide">✨ New</span>}
+        {scheme.application_mode && (
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-600">
+            {scheme.application_mode}
+          </span>
+        )}
+      </div>
+      <button title={saved ? 'Remove from saved' : 'Save scheme'} onClick={()=>onSave(scheme.id)} className={`rounded-lg p-1.5 transition ${saved?'bg-[#fff0ed] text-[#c54f3e]':'text-slate-400 hover:bg-mint hover:text-leaf'}`}>
+        <Heart size={18} fill={saved?'currentColor':'none'}/>
+      </button>
+    </div>
+    <h3 className="mt-3 text-lg font-extrabold leading-snug text-ink">{scheme.name}</h3>
+    <p className="mt-1 text-xs font-semibold text-slate-500 line-clamp-1">{scheme.department}</p>
+    <p className="mt-2.5 text-sm leading-5 text-slate-600 line-clamp-2">{scheme.description}</p>
+    <div className="mt-4 space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-500">
+      <p className="flex items-center gap-2 truncate"><UserRound size={14} className="shrink-0 text-leaf"/>{scheme.beneficiaries}</p>
+      <p className="flex items-center gap-2 truncate"><MapPin size={14} className="shrink-0 text-leaf"/>{scheme.location}</p>
+    </div>
+    <div className="mt-5 flex gap-2">
+      <Button className="flex-1 px-3" variant="secondary" onClick={()=>go('detail',scheme.id)}>View details</Button>
+      <Button className="flex-1 px-3" onClick={()=>go('eligibility',scheme.id)}>Check</Button>
+    </div>
+  </article>
+}
 
-function Directory({go,onSave,saved,schemes}:{go:(p:Page,id?:string)=>void;onSave:(id:string)=>void;saved:string[];schemes:Scheme[]}) {
+function Dashboard({
+  go,
+  onSave,
+  saved,
+  schemes,
+  user,
+  onLogout,
+  onRefresh,
+  loadingSchemes
+}: {
+  go: (p: Page, id?: string) => void;
+  onSave: (id: string) => void;
+  saved: string[];
+  schemes: Scheme[];
+  user?: UserSession['user'] | null;
+  onLogout?: () => void;
+  onRefresh: () => Promise<void>;
+  loadingSchemes?: boolean;
+}) {
+  const isAdmin = Boolean(user?.email?.toLowerCase().includes('admin'));
+  const [catFilter, setCatFilter] = useState('All');
+  const [dashQuery, setDashQuery] = useState('');
+  const [quickSchemeId, setQuickSchemeId] = useState<string>(() => schemes[0]?.id || 'nsp');
+
+  const categories = useMemo(() => Array.from(new Set(schemes.map(s => s.category))), [schemes]);
+
+  // Newly created schemes from Supabase (reverse of schemes array)
+  const newlyAdded = useMemo(() => {
+    return [...schemes].reverse().slice(0, 4);
+  }, [schemes]);
+
+  // Filtered schemes for Explore section
+  const exploreSchemes = useMemo(() => {
+    return schemes.filter(s => {
+      const matchCat = catFilter === 'All' || s.category.toLowerCase() === catFilter.toLowerCase();
+      const matchQ = !dashQuery || (s.name + ' ' + s.description + ' ' + s.department + ' ' + s.category).toLowerCase().includes(dashQuery.toLowerCase());
+      return matchCat && matchQ;
+    });
+  }, [schemes, catFilter, dashQuery]);
+
+  const onlineCount = useMemo(() => schemes.filter(s => s.application_mode === 'online' || s.application_mode === 'both').length, [schemes]);
+
+  return (
+    <AppShell page="dashboard" go={go} savedCount={saved.length} user={user} onLogout={onLogout}>
+      <main className="mx-auto max-w-7xl px-5 py-8 lg:px-8">
+        {/* Welcome Header */}
+        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <p className="text-xs font-bold uppercase tracking-wider text-leaf">
+                Supabase Connected · {schemes.length} Active Schemes
+              </p>
+            </div>
+            <h1 className="mt-1 text-3xl font-extrabold text-ink">
+              Welcome, {user?.full_name || user?.email?.split('@')[0] || 'Citizen'} <span>👋</span>
+            </h1>
+            <p className="mt-1.5 text-sm text-slate-600">
+              Logged in as <span className="font-semibold text-leaf">{user?.email || 'Citizen'}</span>. Discover government schemes, verify eligibility, and apply with confidence.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={onRefresh}
+              disabled={loadingSchemes}
+              title="Sync latest schemes from Supabase"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition shadow-sm disabled:opacity-60"
+            >
+              <RefreshCw size={14} className={loadingSchemes ? "animate-spin text-leaf" : "text-leaf"}/>
+              {loadingSchemes ? 'Syncing...' : 'Sync Schemes'}
+            </button>
+            {isAdmin && (
+              <Button onClick={() => go('admin')} className="bg-[#173a35] text-white hover:bg-[#204a43] shadow-sm">
+                <ShieldCheck size={16}/> Admin Panel
+              </Button>
+            )}
+            <Button onClick={() => go('directory')}>
+              <Search size={16}/> Find schemes
+            </Button>
+          </div>
+        </div>
+
+        {/* 4 Metric Summary Cards */}
+        <div className="mt-7 grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+          <button onClick={() => go('directory')} className="card text-left p-4 transition hover:border-[#9fcdb5] hover:shadow-soft">
+            <div className="flex justify-between items-center">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Verified Schemes</p>
+              <Sparkles size={18} className="text-leaf"/>
+            </div>
+            <p className="mt-2 text-3xl font-extrabold text-ink">{String(schemes.length).padStart(2, '0')}</p>
+            <p className="mt-1 text-xs text-slate-500">Live in Supabase database</p>
+          </button>
+
+          <button onClick={() => go('saved')} className="card text-left p-4 transition hover:border-[#9fcdb5] hover:shadow-soft">
+            <div className="flex justify-between items-center">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Saved Shortlist</p>
+              <Heart size={18} className="text-[#c54f3e]" fill={saved.length ? '#c54f3e' : 'none'}/>
+            </div>
+            <p className="mt-2 text-3xl font-extrabold text-ink">{String(saved.length).padStart(2, '0')}</p>
+            <p className="mt-1 text-xs text-slate-500">{saved.length ? 'Saved for review' : 'No saved schemes yet'}</p>
+          </button>
+
+          <button onClick={() => go('eligibility')} className="card text-left p-4 transition hover:border-[#9fcdb5] hover:shadow-soft">
+            <div className="flex justify-between items-center">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Eligibility Check</p>
+              <ClipboardCheck size={18} className="text-leaf"/>
+            </div>
+            <p className="mt-2 text-3xl font-extrabold text-ink">Instant</p>
+            <p className="mt-1 text-xs text-slate-500">Rule-based assessment</p>
+          </button>
+
+          <button onClick={() => go('directory')} className="card text-left p-4 transition hover:border-[#9fcdb5] hover:shadow-soft">
+            <div className="flex justify-between items-center">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Online Portals</p>
+              <ExternalLink size={18} className="text-leaf"/>
+            </div>
+            <p className="mt-2 text-3xl font-extrabold text-ink">{String(onlineCount).padStart(2, '0')}</p>
+            <p className="mt-1 text-xs text-slate-500">Direct application links</p>
+          </button>
+        </div>
+
+        {/* Main 2-Column Layout */}
+        <section className="mt-8 grid gap-8 xl:grid-cols-[1fr_330px]">
+          <div className="space-y-8">
+            {/* Newly Added Schemes Section */}
+            <div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-800 uppercase tracking-wide">
+                      ⚡ Live Database
+                    </span>
+                    <h2 className="text-xl font-extrabold text-ink">Newly Added Schemes</h2>
+                  </div>
+                  <p className="mt-1 text-sm text-slate-500">Recent government schemes published directly in Supabase</p>
+                </div>
+                <button onClick={() => go('directory')} className="text-sm font-bold text-leaf hover:underline">
+                  View all ({schemes.length}) <ArrowRight className="inline" size={15}/>
+                </button>
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                {newlyAdded.map((s, idx) => (
+                  <SchemeCard
+                    key={s.id}
+                    scheme={s}
+                    go={go}
+                    onSave={onSave}
+                    saved={saved.includes(s.id)}
+                    isNew={idx < 2}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Explore Schemes with Category Filter */}
+            <div className="border-t border-slate-200/70 pt-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-xl font-extrabold text-ink">Explore Schemes by Category</h2>
+                  <p className="mt-1 text-sm text-slate-500">Select a category or search by keywords</p>
+                </div>
+                <div className="relative w-full sm:w-64">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
+                  <input
+                    value={dashQuery}
+                    onChange={e => setDashQuery(e.target.value)}
+                    placeholder="Search schemes..."
+                    className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-xs outline-none focus:border-leaf"
+                  />
+                </div>
+              </div>
+
+              {/* Category Pills */}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  onClick={() => setCatFilter('All')}
+                  className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+                    catFilter === 'All' ? 'bg-leaf text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-mint hover:text-leaf'
+                  }`}
+                >
+                  All ({schemes.length})
+                </button>
+                {categories.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setCatFilter(cat)}
+                    className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+                      catFilter === cat ? 'bg-leaf text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-mint hover:text-leaf'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              {/* Filtered Schemes Grid */}
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                {exploreSchemes.slice(0, 4).map(s => (
+                  <SchemeCard
+                    key={s.id}
+                    scheme={s}
+                    go={go}
+                    onSave={onSave}
+                    saved={saved.includes(s.id)}
+                  />
+                ))}
+              </div>
+              {exploreSchemes.length === 0 && (
+                <div className="card mt-4 p-8 text-center text-slate-500">
+                  No schemes found matching "{dashQuery}". <button onClick={() => { setDashQuery(''); setCatFilter('All'); }} className="font-bold text-leaf hover:underline">Reset filters</button>
+                </div>
+              )}
+              {exploreSchemes.length > 4 && (
+                <div className="mt-5 text-center">
+                  <Button variant="secondary" onClick={() => go('directory')}>
+                    View all {exploreSchemes.length} schemes in Directory <ArrowRight size={15}/>
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Aside Sidebar */}
+          <aside className="space-y-5">
+            {/* AI Assistant Card */}
+            <div className="rounded-2xl bg-[#173a35] p-5 text-white shadow-soft">
+              <div className="flex items-center justify-between">
+                <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-[#bfe1c9]">
+                  <Bot size={21}/>
+                </div>
+                <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[#bfe1c9]">
+                  ElevenLabs AI Voice
+                </span>
+              </div>
+              <h3 className="mt-5 text-lg font-extrabold">Need guidance on schemes?</h3>
+              <p className="mt-2 text-xs leading-5 text-white/70">
+                Ask how to apply, understand qualification rules, or talk using speech-to-text and AI voice.
+              </p>
+              <div className="mt-4 space-y-2">
+                {['How to apply for PM-KISAN?', 'Scholarships for college students', 'Eligibility for Ayushman Bharat'].map(q => (
+                  <button
+                    key={q}
+                    onClick={() => go('chat')}
+                    className="block w-full text-left rounded-lg bg-white/5 px-3 py-2 text-xs text-white/85 hover:bg-white/15 transition truncate"
+                  >
+                    💬 {q}
+                  </button>
+                ))}
+              </div>
+              <Button
+                className="mt-5 w-full bg-white !text-[#173a35] hover:!bg-[#eaf5ef]"
+                onClick={() => go('chat')}
+              >
+                Ask Sahayak AI <ArrowRight size={16}/>
+              </Button>
+            </div>
+
+            {/* Quick Eligibility Checker Widget */}
+            <div className="card p-5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-extrabold text-ink">Quick Eligibility Checker</h3>
+                <ClipboardCheck size={18} className="text-leaf"/>
+              </div>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Select a scheme to test qualification against your citizen profile.
+              </p>
+              <div className="mt-3">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Select Scheme</label>
+                <select
+                  value={quickSchemeId}
+                  onChange={e => setQuickSchemeId(e.target.value)}
+                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-leaf"
+                >
+                  {schemes.map(s => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.category})</option>
+                  ))}
+                </select>
+              </div>
+              <Button
+                className="mt-3 w-full py-2 text-xs"
+                onClick={() => go('eligibility', quickSchemeId)}
+              >
+                Check My Eligibility <ArrowRight size={14}/>
+              </Button>
+            </div>
+
+            {/* Profile Status Card */}
+            <div className="card p-5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-extrabold text-ink">Citizen Profile Readiness</h3>
+                <Clock3 size={17} className="text-leaf"/>
+              </div>
+              <p className="mt-2 text-xs font-semibold text-slate-700">Telangana · Student · Urban</p>
+              <p className="mt-0.5 text-xs text-slate-400">Complete details improve eligibility matching.</p>
+              <div className="mt-3 h-2 overflow-hidden rounded bg-slate-100">
+                <div className="h-full w-3/4 rounded bg-leaf"/>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+                <span>Profile 75% complete</span>
+                <button className="font-bold text-leaf hover:underline" onClick={() => go('profile')}>
+                  Edit profile
+                </button>
+              </div>
+            </div>
+
+            {/* Verified Data Badge */}
+            <div className="rounded-xl border border-[#dde9e2] bg-[#f4faf6] p-4 text-xs text-[#1e583c] flex items-start gap-2.5">
+              <ShieldCheck size={18} className="shrink-0 text-leaf mt-0.5"/>
+              <div>
+                <b className="block font-bold">Official Sources Guaranteed</b>
+                <span className="text-slate-600 leading-4 block mt-0.5">
+                  All schemes and application links are verified against authentic government portals.
+                </span>
+              </div>
+            </div>
+          </aside>
+        </section>
+      </main>
+    </AppShell>
+  );
+}
+
+function Directory({go,onSave,saved,schemes,user,onLogout}:{go:(p:Page,id?:string)=>void;onSave:(id:string)=>void;saved:string[];schemes:Scheme[];user?:UserSession['user']|null;onLogout?:()=>void}) {
   const [query,setQuery]=useState('');
   const [cat,setCat]=useState('All categories');
   const results=useMemo(()=>schemes.filter(s=>(cat==='All categories'||s.category===cat)&&(s.name+s.description+s.category).toLowerCase().includes(query.toLowerCase())),[schemes,query,cat]);
   const categories = useMemo(()=>Array.from(new Set(schemes.map(s=>s.category))),[schemes]);
 
-  return <AppShell page="directory" go={go} savedCount={saved.length}><main className="mx-auto max-w-7xl px-5 py-8 lg:px-8"><p className="text-sm font-bold uppercase tracking-widest text-leaf">Scheme directory</p><h1 className="mt-2 text-3xl font-extrabold">Find the support that fits</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Explore scheme records maintained in Supabase. Always check the official link for current conditions.</p><div className="mt-7 flex flex-col gap-3 rounded-2xl border border-[#dbe9e1] bg-white p-3 shadow-sm md:flex-row"><label className="flex flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3"><Search size={19} className="text-slate-400"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search by scheme, need or category" className="w-full bg-transparent py-3 text-sm outline-none"/></label><label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 text-sm"><SlidersHorizontal size={17} className="text-leaf"/><select value={cat} onChange={e=>setCat(e.target.value)} className="bg-transparent py-3 outline-none"><option>All categories</option>{categories.map(x=><option key={x} value={x}>{x}</option>)}</select></label></div><div className="mt-7 flex flex-col gap-6 lg:flex-row"><aside className="card h-fit w-full p-5 lg:w-58"><h2 className="font-extrabold">Refine results</h2><Filter label="Coverage" values={['Central Government','State Government']}/><Filter label="Category" values={categories}/><Filter label="Your location" values={['Telangana','All India']}/></aside><section className="min-w-0 flex-1"><div className="mb-4 flex justify-between"><p className="text-sm text-slate-500"><b className="text-ink">{results.length}</b> schemes found</p><p className="text-xs text-slate-400">Updated directly from Supabase</p></div><div className="grid gap-4 md:grid-cols-2">{results.map(s=><SchemeCard key={s.id} scheme={s} go={go} onSave={onSave} saved={saved.includes(s.id)}/>)}</div>{!results.length&&<div className="card p-10 text-center text-slate-500">No schemes matched those filters. Try a broader search.</div>}</section></div></main></AppShell>
+  return <AppShell page="directory" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-7xl px-5 py-8 lg:px-8"><p className="text-sm font-bold uppercase tracking-widest text-leaf">Scheme directory</p><h1 className="mt-2 text-3xl font-extrabold">Find the support that fits</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Explore scheme records maintained in Supabase. Always check the official link for current conditions.</p><div className="mt-7 flex flex-col gap-3 rounded-2xl border border-[#dbe9e1] bg-white p-3 shadow-sm md:flex-row"><label className="flex flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3"><Search size={19} className="text-slate-400"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search by scheme, need or category" className="w-full bg-transparent py-3 text-sm outline-none"/></label><label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 text-sm"><SlidersHorizontal size={17} className="text-leaf"/><select value={cat} onChange={e=>setCat(e.target.value)} className="bg-transparent py-3 outline-none"><option>All categories</option>{categories.map(x=><option key={x} value={x}>{x}</option>)}</select></label></div><div className="mt-7 flex flex-col gap-6 lg:flex-row"><aside className="card h-fit w-full p-5 lg:w-58"><h2 className="font-extrabold">Refine results</h2><Filter label="Coverage" values={['Central Government','State Government']}/><Filter label="Category" values={categories}/><Filter label="Your location" values={['Telangana','All India']}/></aside><section className="min-w-0 flex-1"><div className="mb-4 flex justify-between"><p className="text-sm text-slate-500"><b className="text-ink">{results.length}</b> schemes found</p><p className="text-xs text-slate-400">Updated directly from Supabase</p></div><div className="grid gap-4 md:grid-cols-2">{results.map(s=><SchemeCard key={s.id} scheme={s} go={go} onSave={onSave} saved={saved.includes(s.id)}/>)}</div>{!results.length&&<div className="card p-10 text-center text-slate-500">No schemes matched those filters. Try a broader search.</div>}</section></div></main></AppShell>
 }
 
 function Filter({label,values}:{label:string;values:string[]}) {return <div className="mt-6 border-t border-slate-100 pt-5"><p className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p><div className="mt-3 space-y-2.5">{values.map(x=><label className="flex items-center gap-2 text-sm text-slate-600" key={x}><input type="checkbox" className="accent-[#1d7a52]"/>{x}</label>)}</div></div>}
 
-function Detail({id,go,onSave,saved,schemes}:{id:string;go:(p:Page,id?:string)=>void;onSave:(id:string)=>void;saved:string[];schemes:Scheme[]}){const scheme=schemes.find(s=>s.id===id)??schemes[0]??initialSchemes[0]; const [docs,setDocs]=useState<Record<string,string>>({});return <AppShell page="detail" go={go} savedCount={saved.length}><main className="mx-auto max-w-6xl px-5 py-8 lg:px-8"><button onClick={()=>go('directory')} className="flex items-center gap-1 text-sm font-bold text-leaf"><ChevronRight className="rotate-180" size={16}/> Scheme directory</button><div className="mt-6 flex flex-col gap-5 border-b border-[#dce9e2] pb-7 md:flex-row md:justify-between"><div className="max-w-3xl"><div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-mint px-2.5 py-1 text-xs font-bold text-leaf">{scheme.category}</span><span className="text-xs font-semibold text-slate-500">{scheme.location}</span>{scheme.application_mode&&<span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold uppercase text-blue-700">{scheme.application_mode} mode</span>}</div><h1 className="mt-3 text-3xl font-extrabold">{scheme.name}</h1><p className="mt-2 text-sm font-semibold text-slate-500">{scheme.department}</p><p className="mt-4 text-base leading-7 text-slate-600">{scheme.description}</p></div><div className="flex shrink-0 items-start gap-2"><Button variant="secondary" onClick={()=>onSave(scheme.id)}><Heart size={17} fill={saved.includes(scheme.id)?'currentColor':'none'}/>{saved.includes(scheme.id)?'Saved':'Save scheme'}</Button><Button onClick={()=>go('eligibility',scheme.id)}>Check my eligibility</Button></div></div><div className="mt-8 grid gap-8 lg:grid-cols-[1fr_300px]"><div className="space-y-8"><Info title="What this scheme offers"><p>{scheme.benefit}. The exact benefits and availability are decided under official programme rules.</p></Info><Info title="Who can apply"><p>{scheme.beneficiaries}. Review the current official notification before applying.</p><div className="mt-4 grid gap-3 sm:grid-cols-2">{Object.entries(scheme.rules || {}).map(([k,v])=><div className="rounded-xl bg-slate-50 p-3 text-sm" key={k}><span className="block text-xs font-bold capitalize text-slate-400">{k} requirement</span><b className="mt-1 block">{String(v)}</b></div>)}</div></Info><Info title="Required documents"><div className="mt-2 space-y-2">{(scheme.documents || []).map((d: string)=><div className="flex flex-col gap-2 rounded-xl border border-slate-100 p-3 sm:flex-row sm:items-center sm:justify-between" key={d}><span className="flex items-center gap-2 text-sm font-semibold"><CheckCircle2 size={17} className="text-leaf"/>{d}</span><select value={docs[d]??''} onChange={e=>setDocs({...docs,[d]:e.target.value})} className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600"><option value="">Mark status</option><option>Available</option><option>Need to obtain</option><option>Not available</option></select></div>)}</div><p className="mt-3 text-sm font-bold text-leaf">{Object.values(docs).filter(x=>x==='Available').length} of {(scheme.documents || []).length} documents ready</p></Info><Info title="Step-by-step application guidance"><ol className="space-y-4">{['Review the latest official notification, guidelines, and application window.','Gather and prepare clear copies of all required documents.','Click the official portal link below to access the authentic government site.',(scheme.application_mode === 'offline' ? 'Download the application form or visit the nearest local district office.' : 'Complete the online registration form and upload the mandatory documents.'),'Submit your application and note the acknowledgment / registration reference number.'].map((x,i)=><li className="flex gap-3 text-sm leading-6" key={x}><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-mint text-xs font-extrabold text-leaf">{i+1}</span>{x}</li>)}</ol></Info></div><aside className="space-y-4">{scheme.application_url&&<div className="card border-2 border-leaf/30 bg-[#f4faf6] p-5"><p className="text-xs font-bold uppercase tracking-wider text-leaf">Direct Application Portal</p><p className="mt-1 text-sm font-extrabold text-ink">Ready to apply?</p><a href={scheme.application_url} target="_blank" rel="noreferrer" className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-leaf px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#155e3e]">Apply Online Now <ExternalLink size={16}/></a></div>}<div className="card p-5"><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Official scheme source</p><p className="mt-2 text-sm font-bold">Verify current details and apply only through verified channels.</p><a href={scheme.link} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-leaf">Open official website <ExternalLink size={15}/></a></div><div className="card p-5"><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Last reviewed</p><p className="mt-2 text-sm font-bold">{scheme.updated}</p><p className="mt-3 text-xs leading-5 text-slate-500">Scheme terms can update. Confirm with the nodal ministry.</p></div><Button className="w-full" variant="secondary" onClick={()=>go('chat',scheme.id)}><Bot size={17}/> Ask AI how to apply</Button></aside></div></main></AppShell>}
+function Detail({id,go,onSave,saved,schemes,user,onLogout}:{id:string;go:(p:Page,id?:string)=>void;onSave:(id:string)=>void;saved:string[];schemes:Scheme[];user?:UserSession['user']|null;onLogout?:()=>void}){
+  const scheme = schemes.find(s=>s.id===id || s.name.toLowerCase().includes(id.toLowerCase())) ?? schemes[0] ?? initialSchemes[0];
+  const [docs,setDocs]=useState<Record<string,string>>({});
+  return <AppShell page="detail" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-6xl px-5 py-8 lg:px-8"><button onClick={()=>go('directory')} className="flex items-center gap-1 text-sm font-bold text-leaf"><ChevronRight className="rotate-180" size={16}/> Scheme directory</button><div className="mt-6 flex flex-col gap-5 border-b border-[#dce9e2] pb-7 md:flex-row md:justify-between"><div className="max-w-3xl"><div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-mint px-2.5 py-1 text-xs font-bold text-leaf">{scheme.category}</span><span className="text-xs font-semibold text-slate-500">{scheme.location}</span>{scheme.application_mode&&<span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold uppercase text-blue-700">{scheme.application_mode} mode</span>}</div><h1 className="mt-3 text-3xl font-extrabold">{scheme.name}</h1><p className="mt-2 text-sm font-semibold text-slate-500">{scheme.department}</p><p className="mt-4 text-base leading-7 text-slate-600">{scheme.description}</p></div><div className="flex shrink-0 items-start gap-2"><Button variant="secondary" onClick={()=>onSave(scheme.id)}><Heart size={17} fill={saved.includes(scheme.id)?'currentColor':'none'}/>{saved.includes(scheme.id)?'Saved':'Save scheme'}</Button><Button onClick={()=>go('eligibility',scheme.id)}>Check my eligibility</Button></div></div><div className="mt-8 grid gap-8 lg:grid-cols-[1fr_300px]"><div className="space-y-8"><Info title="What this scheme offers"><p>{scheme.benefit}. The exact benefits and availability are decided under official programme rules.</p></Info><Info title="Who can apply"><p>{scheme.beneficiaries}. Review the current official notification before applying.</p><div className="mt-4 grid gap-3 sm:grid-cols-2">{Object.entries(scheme.rules || {}).map(([k,v])=><div className="rounded-xl bg-slate-50 p-3 text-sm" key={k}><span className="block text-xs font-bold capitalize text-slate-400">{k} requirement</span><b className="mt-1 block">{String(v)}</b></div>)}</div></Info><Info title="Required documents"><div className="mt-2 space-y-2">{(scheme.documents || []).map((d: string)=><div className="flex flex-col gap-2 rounded-xl border border-slate-100 p-3 sm:flex-row sm:items-center sm:justify-between" key={d}><span className="flex items-center gap-2 text-sm font-semibold"><CheckCircle2 size={17} className="text-leaf"/>{d}</span><select value={docs[d]??''} onChange={e=>setDocs({...docs,[d]:e.target.value})} className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600"><option value="">Mark status</option><option>Available</option><option>Need to obtain</option><option>Not available</option></select></div>)}</div><p className="mt-3 text-sm font-bold text-leaf">{Object.values(docs).filter(x=>x==='Available').length} of {(scheme.documents || []).length} documents ready</p></Info><Info title="Step-by-step application guidance"><ol className="space-y-4">{['Review the latest official notification, guidelines, and application window.','Gather and prepare clear copies of all required documents.','Click the official portal link below to access the authentic government site.',(scheme.application_mode === 'offline' ? 'Download the application form or visit the nearest local district office.' : 'Complete the online registration form and upload the mandatory documents.'),'Submit your application and note the acknowledgment / registration reference number.'].map((x,i)=><li className="flex gap-3 text-sm leading-6" key={x}><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-mint text-xs font-extrabold text-leaf">{i+1}</span>{x}</li>)}</ol></Info></div><aside className="space-y-4">{scheme.application_url&&<div className="card border-2 border-leaf/30 bg-[#f4faf6] p-5"><p className="text-xs font-bold uppercase tracking-wider text-leaf">Direct Application Portal</p><p className="mt-1 text-sm font-extrabold text-ink">Ready to apply?</p><a href={scheme.application_url} target="_blank" rel="noreferrer" className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-leaf px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#155e3e]">Apply Online Now <ExternalLink size={16}/></a></div>}<div className="card p-5"><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Official scheme source</p><p className="mt-2 text-sm font-bold">Verify current details and apply only through verified channels.</p><a href={scheme.link} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-leaf">Open official website <ExternalLink size={15}/></a></div><div className="card p-5"><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Last reviewed</p><p className="mt-2 text-sm font-bold">{scheme.updated}</p><p className="mt-3 text-xs leading-5 text-slate-500">Scheme terms can update. Confirm with the nodal ministry.</p></div><Button className="w-full" variant="secondary" onClick={()=>go('chat',scheme.id)}><Bot size={17}/> Ask AI how to apply</Button></aside></div></main></AppShell>}
 function Info({title,children}:{title:string;children:React.ReactNode}){return <section><h2 className="text-xl font-extrabold">{title}</h2><div className="mt-3 text-sm leading-6 text-slate-600">{children}</div></section>}
 
-function Eligibility({id,go,saved,schemes}:{id?:string;go:(p:Page,id?:string)=>void;saved:string[];schemes:Scheme[]}){const [selected,setSelected]=useState(id??(schemes[0]?.id || 'nsp'));const [run,setRun]=useState(Boolean(id));const scheme=schemes.find(s=>s.id===selected)??schemes[0]??initialSchemes[0];return <AppShell page="eligibility" go={go} savedCount={saved.length}><main className="mx-auto max-w-5xl px-5 py-8 lg:px-8"><p className="text-sm font-bold uppercase tracking-widest text-leaf">Eligibility checker</p><h1 className="mt-2 text-3xl font-extrabold">Understand your likely eligibility</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">We compare your profile with structured scheme criteria. This is guidance only — the government authority makes the final decision.</p><div className="mt-7 card p-5"><label className="text-sm font-bold">Choose a scheme<select value={selected} onChange={e=>{setSelected(e.target.value);setRun(false)}} className="mt-2 block w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none">{schemes.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></label><div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 p-4"><div><p className="text-sm font-bold">Profile details used</p><p className="mt-1 text-xs text-slate-500">Age 20 · Telangana · Student · Annual income: not added</p></div><Button onClick={()=>setRun(true)}><ClipboardCheck size={17}/> Check eligibility</Button></div></div>{run&&<div className="mt-7 grid gap-5 lg:grid-cols-[.9fr_1.1fr]"><div className="rounded-2xl bg-[#173a35] p-6 text-white"><p className="text-sm font-bold text-[#bfe1c9]">GUIDANCE RESULT</p><div className="mt-5 flex items-end gap-4"><div className="text-5xl font-extrabold">74<span className="text-2xl">%</span></div><div className="mb-1 rounded-full bg-[#dcf3e4] px-3 py-1 text-xs font-extrabold text-leaf">Possibly eligible</div></div><p className="mt-5 text-sm leading-6 text-white/75">Your location and citizen status align with this scheme. Complete your income and occupation details to verify full qualification.</p><div className="mt-6 border-t border-white/10 pt-5 text-xs text-white/65">Confidence reflects criteria completeness and rule matches — it is not an approval prediction.</div></div><div className="card p-6"><h2 className="font-extrabold">What we found for {scheme.name}</h2><div className="mt-5 grid gap-5 sm:grid-cols-2"><CheckList title="Criteria matched" color="text-leaf" items={['Location: India / Telangana','Citizen residency: Verified']}/><CheckList title="Missing information" color="text-amber-600" items={['Annual family income proof','Category / Caste certificate (if required)']}/></div><div className="mt-5 rounded-xl bg-[#fff8df] p-4 text-sm leading-6 text-[#6b5817]"><b>Next action:</b> Check required documents ({scheme.documents?.join(', ') || 'Aadhaar, Bank details'}) and apply directly on the official portal.</div></div></div>}</main></AppShell>}
+function Eligibility({id,go,saved,schemes,user,onLogout}:{id?:string;go:(p:Page,id?:string)=>void;saved:string[];schemes:Scheme[];user?:UserSession['user']|null;onLogout?:()=>void}){
+  const initialScheme = schemes.find(s => id ? (s.id === id || s.name.toLowerCase().includes(id.toLowerCase())) : false) || schemes[0] || initialSchemes[0];
+  const [selected,setSelected]=useState(initialScheme.id);
+  const [run,setRun]=useState(Boolean(id));
+
+  useEffect(() => {
+    if (id) {
+      const match = schemes.find(s => s.id === id || s.name.toLowerCase().includes(id.toLowerCase()));
+      if (match) {
+        setSelected(match.id);
+        setRun(true);
+      }
+    }
+  }, [id, schemes]);
+
+  const scheme=schemes.find(s=>s.id===selected)??initialScheme;
+  return <AppShell page="eligibility" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-5xl px-5 py-8 lg:px-8"><p className="text-sm font-bold uppercase tracking-widest text-leaf">Eligibility checker</p><h1 className="mt-2 text-3xl font-extrabold">Understand your likely eligibility</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">We compare your profile with structured scheme criteria. This is guidance only — the government authority makes the final decision.</p><div className="mt-7 card p-5"><label className="text-sm font-bold">Choose a scheme<select value={selected} onChange={e=>{setSelected(e.target.value);setRun(false)}} className="mt-2 block w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none">{schemes.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></label><div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 p-4"><div><p className="text-sm font-bold">Profile details used</p><p className="mt-1 text-xs text-slate-500">Age 20 · Telangana · Student · Annual income: not added</p></div><Button onClick={()=>setRun(true)}><ClipboardCheck size={17}/> Check eligibility</Button></div></div>{run&&<div className="mt-7 grid gap-5 lg:grid-cols-[.9fr_1.1fr]"><div className="rounded-2xl bg-[#173a35] p-6 text-white"><p className="text-sm font-bold text-[#bfe1c9]">GUIDANCE RESULT</p><div className="mt-5 flex items-end gap-4"><div className="text-5xl font-extrabold">74<span className="text-2xl">%</span></div><div className="mb-1 rounded-full bg-[#dcf3e4] px-3 py-1 text-xs font-extrabold text-leaf">Possibly eligible</div></div><p className="mt-5 text-sm leading-6 text-white/75">Your location and citizen status align with this scheme. Complete your income and occupation details to verify full qualification.</p><div className="mt-6 border-t border-white/10 pt-5 text-xs text-white/65">Confidence reflects criteria completeness and rule matches — it is not an approval prediction.</div></div><div className="card p-6"><h2 className="font-extrabold">What we found for {scheme.name}</h2><div className="mt-5 grid gap-5 sm:grid-cols-2"><CheckList title="Criteria matched" color="text-leaf" items={['Location: India / Telangana','Citizen residency: Verified']}/><CheckList title="Missing information" color="text-amber-600" items={['Annual family income proof','Category / Caste certificate (if required)']}/></div><div className="mt-5 rounded-xl bg-[#fff8df] p-4 text-sm leading-6 text-[#6b5817]"><b>Next action:</b> Check required documents ({scheme.documents?.join(', ') || 'Aadhaar, Bank details'}) and apply directly on the official portal.</div></div></div>}</main></AppShell>}
 function CheckList({title,color,items}:{title:string;color:string;items:string[]}){return <div><p className="text-xs font-bold uppercase tracking-wider text-slate-400">{title}</p><div className="mt-3 space-y-2">{items.map(x=><p className="flex gap-2 text-sm text-slate-600" key={x}><CheckCircle2 className={color} size={17}/>{x}</p>)}</div></div>}
 
-function Saved({go,onSave,saved,schemes}:{go:(p:Page,id?:string)=>void;onSave:(id:string)=>void;saved:string[];schemes:Scheme[]}){const items=schemes.filter(s=>saved.includes(s.id));return <AppShell page="saved" go={go} savedCount={saved.length}><main className="mx-auto max-w-5xl px-5 py-8 lg:px-8"><h1 className="text-3xl font-extrabold">Saved schemes</h1><p className="mt-2 text-sm text-slate-600">Keep useful schemes together and return when you are ready.</p>{items.length?<div className="mt-7 space-y-3">{items.map(s=><div className="card flex flex-col gap-4 p-5 sm:flex-row sm:items-center" key={s.id}><div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-mint text-leaf"><Landmark size={20}/></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h2 className="font-extrabold">{s.name}</h2><span className="rounded-full bg-mint px-2 py-0.5 text-[10px] font-bold text-leaf">{s.category}</span></div><p className="mt-1 text-sm text-slate-500">Saved today · Documents: {s.documents?.length || 0} required</p></div><div className="flex gap-2"><Button variant="secondary" onClick={()=>go('detail',s.id)}>View</Button><button title="Remove saved scheme" onClick={()=>onSave(s.id)} className="rounded-xl border border-slate-200 p-2.5 text-slate-400 hover:text-red-500"><X size={18}/></button></div></div>)}</div>:<div className="card mt-7 p-12 text-center"><Heart className="mx-auto text-[#99cbb0]" size={32}/><h2 className="mt-4 font-extrabold">Nothing saved yet</h2><p className="mt-1 text-sm text-slate-500">Save schemes to compare them later.</p><Button className="mt-5" onClick={()=>go('directory')}>Browse schemes</Button></div>}</main></AppShell>}
+function Saved({go,onSave,saved,schemes,user,onLogout}:{go:(p:Page,id?:string)=>void;onSave:(id:string)=>void;saved:string[];schemes:Scheme[];user?:UserSession['user']|null;onLogout?:()=>void}){
+  const items=schemes.filter(s=>saved.includes(s.id));
+  return <AppShell page="saved" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-5xl px-5 py-8 lg:px-8"><h1 className="text-3xl font-extrabold">Saved schemes</h1><p className="mt-2 text-sm text-slate-600">Keep useful schemes together and return when you are ready.</p>{items.length?<div className="mt-7 space-y-3">{items.map(s=><div className="card flex flex-col gap-4 p-5 sm:flex-row sm:items-center" key={s.id}><div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-mint text-leaf"><Landmark size={20}/></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h2 className="font-extrabold">{s.name}</h2><span className="rounded-full bg-mint px-2 py-0.5 text-[10px] font-bold text-leaf">{s.category}</span></div><p className="mt-1 text-sm text-slate-500">Saved today · Documents: {s.documents?.length || 0} required</p></div><div className="flex gap-2"><Button variant="secondary" onClick={()=>go('detail',s.id)}>View</Button><button title="Remove saved scheme" onClick={()=>onSave(s.id)} className="rounded-xl border border-slate-200 p-2.5 text-slate-400 hover:text-red-500"><X size={18}/></button></div></div>)}</div>:<div className="card mt-7 p-12 text-center"><Heart className="mx-auto text-[#99cbb0]" size={32}/><h2 className="mt-4 font-extrabold">Nothing saved yet</h2><p className="mt-1 text-sm text-slate-500">Save schemes to compare them later.</p><Button className="mt-5" onClick={()=>go('directory')}>Browse schemes</Button></div>}</main></AppShell>
+}
 
 function Profile({go,saved,user,onLogout}:{go:(p:Page,id?:string)=>void;saved:string[];user?:UserSession['user']|null;onLogout?:()=>void}) { const [edit,setEdit]=useState(false);const [savedForm,setSavedForm]=useState(false);const initials = user?.full_name ? user.full_name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() : (user?.email?.slice(0,2).toUpperCase() || 'AS');const displayName = user?.full_name || user?.email?.split('@')[0] || 'Citizen Profile';return <AppShell page="profile" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-4xl px-5 py-8 lg:px-8"><div className="flex items-end justify-between"><div><p className="text-sm font-bold uppercase tracking-widest text-leaf">Your profile</p><h1 className="mt-2 text-3xl font-extrabold">Personalise your guidance</h1><p className="mt-2 text-sm text-slate-600">Saved securely in your Supabase account. You can update it anytime.</p></div><div className="flex gap-2">{onLogout&&<Button variant="secondary" onClick={onLogout}>Log out</Button>}<Button variant="secondary" onClick={()=>setEdit(!edit)}>{edit?'Cancel':'Edit profile'}</Button></div></div><form className="mt-7 card p-6" onSubmit={e=>{e.preventDefault();setEdit(false);setSavedForm(true)}}><div className="flex items-center gap-4 border-b border-slate-100 pb-6"><div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#d9eee1] text-lg font-extrabold text-leaf">{initials}</div><div><h2 className="font-extrabold">{displayName}</h2><p className="text-sm text-slate-500">{user?.email || 'Logged in user'}</p></div></div><div className="mt-6 grid gap-x-5 gap-y-5 sm:grid-cols-2">{[['Full name',displayName],['Email address',user?.email||''],['Age','20'],['Gender','Female'],['State','Telangana'],['District','Hyderabad'],['Occupation','Student'],['Annual family income',''],['Area type','Urban'],['Social / economic category',''],['Disability status','Not applicable']].map(([label,value])=><label className="text-sm font-bold text-slate-700" key={label}>{label}{edit?<input defaultValue={value} placeholder={label.includes('income')?'Add amount if relevant':'Not added'} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal outline-none"/>:<p className="mt-1.5 rounded-xl bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-600">{value||'Not added'}</p>}</label>)}</div><div className="mt-6 rounded-xl bg-[#fff8df] p-4 text-xs leading-5 text-[#6b5817]"><b>Privacy note:</b> Your profile and activity are protected with Supabase Row Level Security.</div>{edit&&<Button type="submit" className="mt-5">Save changes <Check size={16}/></Button>}{savedForm&&<p className="mt-5 text-sm font-bold text-leaf">Profile updated.</p>}</form></main></AppShell>}
 
-function History({go,saved,user,onLogout}:{go:(p:Page,id?:string)=>void;saved:string[];user?:UserSession['user']|null;onLogout?:()=>void}){return <AppShell page="history" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-5xl px-5 py-8 lg:px-8"><h1 className="text-3xl font-extrabold">Eligibility history</h1><p className="mt-2 text-sm text-slate-600">Revisit past guidance results. Requirements may change, so re-check before applying.</p><div className="mt-7 overflow-hidden rounded-2xl border border-[#dce9e2] bg-white"><div className="grid grid-cols-[1.5fr_.8fr_.8fr_auto] gap-3 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-400"><span>Scheme</span><span className="hidden sm:block">Checked</span><span>Status</span><span></span></div>{[['National Scholarship Portal','Today','Possibly eligible','nsp'],['PM-KISAN','2 Sep 2026','Insufficient info','pm-kisan']].map(([name,date,status,id])=><div className="grid grid-cols-[1.5fr_.8fr_.8fr_auto] items-center gap-3 px-5 py-4 text-sm" key={id}><span className="font-bold">{name}</span><span className="hidden text-slate-500 sm:block">{date}</span><span className={`w-fit rounded-full px-2 py-1 text-[11px] font-bold ${status==='Possibly eligible'?'bg-[#fff4d6] text-[#9a6810]':'bg-slate-100 text-slate-600'}`}>{status}</span><button className="font-bold text-leaf" onClick={()=>go('eligibility',id)}>View</button></div>)}</div></main></AppShell>}
+function History({go,saved,user,onLogout,schemes}:{go:(p:Page,id?:string)=>void;saved:string[];user?:UserSession['user']|null;onLogout?:()=>void;schemes?:Scheme[]}){
+  return <AppShell page="history" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-5xl px-5 py-8 lg:px-8"><h1 className="text-3xl font-extrabold">Eligibility history</h1><p className="mt-2 text-sm text-slate-600">Revisit past guidance results. Requirements may change, so re-check before applying.</p><div className="mt-7 overflow-hidden rounded-2xl border border-[#dce9e2] bg-white"><div className="grid grid-cols-[1.5fr_.8fr_.8fr_auto] gap-3 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-400"><span>Scheme</span><span className="hidden sm:block">Checked</span><span>Status</span><span></span></div>{[['National Scholarship Portal','Today','Possibly eligible','nsp'],['PM-KISAN','2 Sep 2026','Insufficient info','pm-kisan']].map(([name,date,status,id])=>{
+    const targetScheme = schemes?.find(s => s.name.toLowerCase().includes(name.toLowerCase()) || s.id === id);
+    return <div className="grid grid-cols-[1.5fr_.8fr_.8fr_auto] items-center gap-3 px-5 py-4 text-sm" key={id}><span className="font-bold">{name}</span><span className="hidden text-slate-500 sm:block">{date}</span><span className={`w-fit rounded-full px-2 py-1 text-[11px] font-bold ${status==='Possibly eligible'?'bg-[#fff4d6] text-[#9a6810]':'bg-slate-100 text-slate-600'}`}>{status}</span><button className="font-bold text-leaf hover:underline" onClick={()=>go('eligibility',targetScheme?.id || id)}>View</button></div>;
+  })}</div></main></AppShell>}
 
 interface ChatMsg {
   id: string;
@@ -738,7 +1184,7 @@ function Admin({go,schemes,onRefresh,user}:{go:(p:Page,id?:string)=>void;schemes
             <Field label="Password" placeholder="••••••••" type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)}/>
             <Button type="submit" className="w-full">Sign in to Admin Dashboard</Button>
           </form>
-          <button onClick={() => go('home')} className="mt-6 block text-center text-sm font-bold text-leaf hover:underline">
+          <button onClick={() => go(user ? 'dashboard' : 'home')} className="mt-6 block text-center text-sm font-bold text-leaf hover:underline">
             Return to Citizen Portal
           </button>
         </div>
@@ -753,12 +1199,12 @@ function Admin({go,schemes,onRefresh,user}:{go:(p:Page,id?:string)=>void;schemes
   return (
     <div className="min-h-screen bg-[#f6f8f7]">
       <header className="flex h-16 items-center justify-between border-b bg-white px-5 lg:px-8">
-        <Logo/>
+        <button onClick={() => go(user ? 'dashboard' : 'home')} className="text-left"><Logo/></button>
         <div className="flex items-center gap-3">
           <span className="hidden rounded-full bg-mint px-3 py-1 text-xs font-bold text-leaf sm:block">
             ● Supabase Database Active
           </span>
-          <Button variant="ghost" onClick={() => go('home')}>
+          <Button variant="ghost" onClick={() => go(user ? 'dashboard' : 'home')}>
             <LogOut size={16}/> Exit Admin
           </Button>
         </div>
@@ -1002,10 +1448,10 @@ function Admin({go,schemes,onRefresh,user}:{go:(p:Page,id?:string)=>void;schemes
 }
 
 export default function App(){
-  const [page,setPage]=useState<Page>('home');
-  const [selected,setSelected]=useState('nsp');
-  const [saved,setSaved]=useState<string[]>([]);
   const [user,setUser]=useState<UserSession['user']|null>(()=>authApi.getUser());
+  const [page,setPage]=useState<Page>(()=>authApi.getUser() ? 'dashboard' : 'home');
+  const [selected,setSelected]=useState(() => initialSchemes[0]?.id || 'nsp');
+  const [saved,setSaved]=useState<string[]>([]);
   const [schemes, setSchemes] = useState<Scheme[]>(initialSchemes);
   const [loadingSchemes, setLoadingSchemes] = useState(false);
 
@@ -1046,14 +1492,14 @@ export default function App(){
     go('home');
   };
 
-  if(page==='home')return <Landing go={go}/>;
+  if(page==='home')return <Landing go={go} user={user}/>;
   if(['login','signup','forgot'].includes(page))return <Auth page={page} go={go} login={login}/>;
-  if(page==='dashboard')return <Dashboard go={go} onSave={toggleSave} saved={saved} schemes={schemes} user={user} onLogout={logout}/>;
-  if(page==='directory')return <Directory go={go} onSave={toggleSave} saved={saved} schemes={schemes}/>;
-  if(page==='detail')return <Detail id={selected} go={go} onSave={toggleSave} saved={saved} schemes={schemes}/>;
-  if(page==='eligibility')return <Eligibility id={selected} go={go} saved={saved} schemes={schemes}/>;
-  if(page==='saved')return <Saved go={go} onSave={toggleSave} saved={saved} schemes={schemes}/>;
-  if(page==='history')return <History go={go} saved={saved} user={user} onLogout={logout}/>;
+  if(page==='dashboard')return <Dashboard go={go} onSave={toggleSave} saved={saved} schemes={schemes} user={user} onLogout={logout} onRefresh={loadSchemes} loadingSchemes={loadingSchemes}/>;
+  if(page==='directory')return <Directory go={go} onSave={toggleSave} saved={saved} schemes={schemes} user={user} onLogout={logout}/>;
+  if(page==='detail')return <Detail id={selected} go={go} onSave={toggleSave} saved={saved} schemes={schemes} user={user} onLogout={logout}/>;
+  if(page==='eligibility')return <Eligibility id={selected} go={go} saved={saved} schemes={schemes} user={user} onLogout={logout}/>;
+  if(page==='saved')return <Saved go={go} onSave={toggleSave} saved={saved} schemes={schemes} user={user} onLogout={logout}/>;
+  if(page==='history')return <History go={go} saved={saved} user={user} onLogout={logout} schemes={schemes}/>;
   if(page==='profile')return <Profile go={go} saved={saved} user={user} onLogout={logout}/>;
   if(page==='chat')return <Chat go={go} saved={saved} schemeId={selected} schemes={schemes} user={user} onLogout={logout}/>;
   return <Admin go={go} schemes={schemes} onRefresh={loadSchemes} user={user}/>;
