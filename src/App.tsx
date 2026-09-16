@@ -1,5 +1,6 @@
-import { useMemo, useState, useEffect, useRef } from 'react'
-import { authApi, schemesApi, aiApi, UserSession, SchemeItem } from './api'
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react'
+import ReactMarkdown from 'react-markdown'
+import { authApi, schemesApi, aiApi, EligibilityResult, UserProfile, UserSession, SchemeItem } from './api'
 import {
   ArrowRight, BadgeCheck, Bell, BookOpen, Bot, Check, CheckCircle2, ChevronRight,
   CircleHelp, ClipboardCheck, FileText, Heart, Landmark, LogOut, Menu, Search,
@@ -9,6 +10,8 @@ import {
 
 type Page = 'home' | 'login' | 'signup' | 'forgot' | 'dashboard' | 'directory' | 'detail' | 'eligibility' | 'saved' | 'history' | 'profile' | 'chat' | 'admin'
 type Scheme = SchemeItem
+
+const isAdminUser = (user?: UserSession['user'] | null) => Boolean(user?.email?.toLowerCase().includes('admin'))
 
 const initialSchemes: Scheme[] = [
   { id: 'pm-kisan', name: 'PM-KISAN', department: 'Ministry of Agriculture & Farmers Welfare', description: 'Income support for eligible landholding farmer families across India.', category: 'Agriculture', location: 'Central Government', beneficiaries: 'Landholding farmer families', benefit: '₹6,000 per year in three equal instalments of ₹2,000', documents: ['Aadhaar card', 'Bank account details linked with Aadhaar', 'Land ownership records'], updated: '20 August 2026', link: 'https://pmkisan.gov.in/', application_url: 'https://pmkisan.gov.in/RegistrationFormNew.aspx', application_mode: 'online', rules: { residency: 'Indian resident', occupation: 'Landholding farmer' } },
@@ -85,7 +88,7 @@ function Footer({go, user}:{go:(p:Page)=>void; user?: UserSession['user']|null})
       <div className="flex items-center gap-4">
         {user && <button onClick={()=>go('dashboard')} className="text-xs font-semibold text-white/70 hover:text-white">Citizen Dashboard</button>}
         <button onClick={()=>go('directory')} className="text-xs font-semibold text-white/70 hover:text-white">Schemes</button>
-        <button onClick={()=>go('admin')} className="text-xs font-semibold text-white/60 hover:text-white">Admin access</button>
+        {isAdminUser(user) && <button onClick={()=>go('admin')} className="text-xs font-semibold text-white/60 hover:text-white">Admin console</button>}
       </div>
     </div>
   </footer>
@@ -163,7 +166,7 @@ function AppShell({page,go,children,savedCount,user,onLogout}:{page:Page;go:(p:P
   const [menu,setMenu]=useState(false);
   const initials = user?.full_name ? user.full_name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() : (user?.email?.slice(0,2).toUpperCase() || 'AS');
   const displayName = user?.full_name || user?.email?.split('@')[0] || 'User';
-  const isAdmin = Boolean(user?.email?.toLowerCase().includes('admin'));
+  const isAdmin = isAdminUser(user);
 
   const currentNavItems = [
     ...(user ? [{ label: 'Dashboard', page: 'dashboard' as Page, icon: LayoutDashboard }] : []),
@@ -177,40 +180,43 @@ function AppShell({page,go,children,savedCount,user,onLogout}:{page:Page;go:(p:P
     <div>
       <header className="sticky top-0 z-20 border-b border-[#dde9e2] bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 lg:px-8">
-          <button onClick={()=>go(user ? 'dashboard' : 'home')} className="text-left"><Logo/></button>
-          <nav className="hidden items-center gap-1 lg:flex">
+          <button onClick={()=>go(user ? 'dashboard' : 'home')} className="text-left shrink-0"><Logo/></button>
+          <nav className="hidden items-center gap-1 xl:gap-2 xl:flex shrink-0" aria-label="Primary navigation">
             {currentNavItems.map(({label,page:p,icon:Icon})=>(
               <button
                 onClick={()=>go(p)}
                 key={p}
-                className={`rounded-lg px-3 py-2 text-sm font-bold transition ${page===p?'bg-mint text-leaf':'text-slate-600 hover:bg-slate-50'}`}
+                className={`rounded-lg px-2.5 xl:px-3 py-2 text-sm font-bold whitespace-nowrap transition ${page===p?'bg-mint text-leaf':'text-slate-600 hover:bg-slate-50'}`}
               >
-                <span className="inline-flex items-center gap-1.5">
-                  <Icon size={15}/>{label}
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                  <Icon size={15} className="shrink-0"/>{label}
                   {p==='saved'&&savedCount>0&&<span className="ml-1 rounded-full bg-leaf px-1.5 py-0.2 text-[10px] font-extrabold text-white">{savedCount}</span>}
                 </span>
               </button>
             ))}
             {isAdmin && (
-              <button onClick={()=>go('admin')} className={`rounded-lg px-3 py-2 text-sm font-bold transition ${page==='admin'?'bg-[#173a35] text-white':'text-amber-800 bg-amber-50 hover:bg-amber-100'}`}>
-                <span className="inline-flex items-center gap-1.5"><ShieldCheck size={15}/>Admin Panel</span>
+              <button
+                onClick={()=>go('admin')}
+                className={`rounded-lg px-2.5 xl:px-3 py-2 text-sm font-bold whitespace-nowrap transition ${page==='admin'?'bg-[#173a35] text-white shadow-sm':'text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200/70'}`}
+              >
+                <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                  <ShieldCheck size={15} className="shrink-0"/>Admin Panel
+                </span>
               </button>
             )}
           </nav>
-          <div className="flex items-center gap-2">
-            {isAdmin && (
-              <button onClick={()=>go('admin')} className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-amber-100 px-3 py-2 text-xs font-extrabold text-amber-900 hover:bg-amber-200 transition">
-                <ShieldCheck size={14}/> Admin Panel
-              </button>
-            )}
+          <div className="flex items-center gap-2 shrink-0">
             {user ? (
               <>
-                <button onClick={()=>go('profile')} className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-sm font-bold hover:bg-slate-50 transition sm:flex">
+                <button onClick={()=>go('profile')} className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-sm font-bold hover:bg-slate-50 transition 2xl:flex">
                   <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#d9eee1] text-leaf text-xs">{initials}</span>
                   <span className="mr-1 max-w-[120px] truncate">{displayName}</span>
                 </button>
+                <button onClick={()=>go('profile')} title="Open profile" className="grid h-10 w-10 place-items-center rounded-xl bg-[#d9eee1] text-xs font-bold text-leaf transition hover:bg-mint 2xl:hidden">
+                  {initials}
+                </button>
                 {onLogout && (
-                  <button onClick={onLogout} title="Log out" className="hidden rounded-xl border border-slate-200 bg-white p-2 text-slate-500 hover:bg-slate-100 hover:text-red-600 transition sm:block">
+                  <button onClick={onLogout} title="Log out" className="hidden rounded-xl border border-slate-200 bg-white p-2 text-slate-500 hover:bg-slate-100 hover:text-red-600 transition xl:block">
                     <LogOut size={16}/>
                   </button>
                 )}
@@ -221,10 +227,10 @@ function AppShell({page,go,children,savedCount,user,onLogout}:{page:Page;go:(p:P
                 <Button onClick={()=>go('signup')}>Sign up</Button>
               </div>
             )}
-            <button className="rounded-lg p-2 lg:hidden" onClick={()=>setMenu(!menu)}>{menu?<X/>:<Menu/>}</button>
+            <button aria-label={menu ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={menu} className="rounded-lg p-2 xl:hidden" onClick={()=>setMenu(!menu)}>{menu?<X/>:<Menu/>}</button>
           </div>
         </div>
-        {menu&&<nav className="space-y-1 border-t bg-white p-3 lg:hidden">
+        {menu&&<nav className="space-y-1 border-t bg-white p-3 xl:hidden" aria-label="Mobile navigation">
           {currentNavItems.map(({label,page:p,icon:Icon})=>(
             <button key={p} onClick={()=>{go(p);setMenu(false)}} className={`flex w-full items-center gap-3 rounded-lg p-3 text-sm font-bold ${page===p ? 'bg-mint text-leaf' : 'text-slate-700 hover:bg-slate-50'}`}>
               <Icon size={17}/>{label}
@@ -270,7 +276,7 @@ function SchemeCard({scheme,go,onSave,saved,isNew=false}:{scheme:Scheme;go:(p:Pa
       <p className="flex items-center gap-2 truncate"><UserRound size={14} className="shrink-0 text-leaf"/>{scheme.beneficiaries}</p>
       <p className="flex items-center gap-2 truncate"><MapPin size={14} className="shrink-0 text-leaf"/>{scheme.location}</p>
     </div>
-    <div className="mt-5 flex gap-2">
+    <div className="mt-auto pt-4 flex gap-2">
       <Button className="flex-1 px-3" variant="secondary" onClick={()=>go('detail',scheme.id)}>View details</Button>
       <Button className="flex-1 px-3" onClick={()=>go('eligibility',scheme.id)}>Check</Button>
     </div>
@@ -296,7 +302,7 @@ function Dashboard({
   onRefresh: () => Promise<void>;
   loadingSchemes?: boolean;
 }) {
-  const isAdmin = Boolean(user?.email?.toLowerCase().includes('admin'));
+  const isAdmin = isAdminUser(user);
   const [catFilter, setCatFilter] = useState('All');
   const [dashQuery, setDashQuery] = useState('');
   const [quickSchemeId, setQuickSchemeId] = useState<string>(() => schemes[0]?.id || 'nsp');
@@ -324,7 +330,7 @@ function Dashboard({
       <main className="mx-auto max-w-7xl px-5 py-8 lg:px-8">
         {/* Welcome Header */}
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <p className="text-xs font-bold uppercase tracking-wider text-leaf">
@@ -335,10 +341,11 @@ function Dashboard({
               Welcome, {user?.full_name || user?.email?.split('@')[0] || 'Citizen'} <span>👋</span>
             </h1>
             <p className="mt-1.5 text-sm text-slate-600">
+              {isAdmin ? 'You are viewing the citizen experience as an administrator. ' : ''}
               Logged in as <span className="font-semibold text-leaf">{user?.email || 'Citizen'}</span>. Discover government schemes, verify eligibility, and apply with confidence.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5 sm:flex-nowrap md:shrink-0">
             <button
               onClick={onRefresh}
               disabled={loadingSchemes}
@@ -348,11 +355,6 @@ function Dashboard({
               <RefreshCw size={14} className={loadingSchemes ? "animate-spin text-leaf" : "text-leaf"}/>
               {loadingSchemes ? 'Syncing...' : 'Sync Schemes'}
             </button>
-            {isAdmin && (
-              <Button onClick={() => go('admin')} className="bg-[#173a35] text-white hover:bg-[#204a43] shadow-sm">
-                <ShieldCheck size={16}/> Admin Panel
-              </Button>
-            )}
             <Button onClick={() => go('directory')}>
               <Search size={16}/> Find schemes
             </Button>
@@ -602,13 +604,37 @@ function Dashboard({
 function Directory({go,onSave,saved,schemes,user,onLogout}:{go:(p:Page,id?:string)=>void;onSave:(id:string)=>void;saved:string[];schemes:Scheme[];user?:UserSession['user']|null;onLogout?:()=>void}) {
   const [query,setQuery]=useState('');
   const [cat,setCat]=useState('All categories');
-  const results=useMemo(()=>schemes.filter(s=>(cat==='All categories'||s.category===cat)&&(s.name+s.description+s.category).toLowerCase().includes(query.toLowerCase())),[schemes,query,cat]);
+  const [coverage, setCoverage] = useState<string[]>([]);
+  const [sidebarCategories, setSidebarCategories] = useState<string[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
   const categories = useMemo(()=>Array.from(new Set(schemes.map(s=>s.category))),[schemes]);
+  const toggleFilter = (value: string, setValue: React.Dispatch<React.SetStateAction<string[]>>) => {
+    setValue(current => current.includes(value) ? current.filter(item => item !== value) : [...current, value]);
+  };
+  const clearFilters = () => {
+    setQuery('');
+    setCat('All categories');
+    setCoverage([]);
+    setSidebarCategories([]);
+    setLocations([]);
+  };
+  const hasFilters = Boolean(query || cat !== 'All categories' || coverage.length || sidebarCategories.length || locations.length);
+  const results=useMemo(()=>schemes.filter(s => {
+    const textMatches = (s.name+s.description+s.category+s.department).toLowerCase().includes(query.toLowerCase());
+    const categoryMatches = (cat === 'All categories' || s.category === cat) && (!sidebarCategories.length || sidebarCategories.includes(s.category));
+    const schemeLocation = s.location.toLowerCase();
+    const coverageMatches = !coverage.length || coverage.some(value => schemeLocation.includes(value === 'Central Government' ? 'central' : 'state'));
+    const locationMatches = !locations.length || locations.some(value => {
+      if (value === 'All India') return schemeLocation.includes('central') || schemeLocation.includes('india');
+      return schemeLocation.includes(value.toLowerCase()) || schemeLocation.includes('central');
+    });
+    return textMatches && categoryMatches && coverageMatches && locationMatches;
+  }),[schemes,query,cat,coverage,sidebarCategories,locations]);
 
-  return <AppShell page="directory" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-7xl px-5 py-8 lg:px-8"><p className="text-sm font-bold uppercase tracking-widest text-leaf">Scheme directory</p><h1 className="mt-2 text-3xl font-extrabold">Find the support that fits</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Explore scheme records maintained in Supabase. Always check the official link for current conditions.</p><div className="mt-7 flex flex-col gap-3 rounded-2xl border border-[#dbe9e1] bg-white p-3 shadow-sm md:flex-row"><label className="flex flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3"><Search size={19} className="text-slate-400"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search by scheme, need or category" className="w-full bg-transparent py-3 text-sm outline-none"/></label><label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 text-sm"><SlidersHorizontal size={17} className="text-leaf"/><select value={cat} onChange={e=>setCat(e.target.value)} className="bg-transparent py-3 outline-none"><option>All categories</option>{categories.map(x=><option key={x} value={x}>{x}</option>)}</select></label></div><div className="mt-7 flex flex-col gap-6 lg:flex-row"><aside className="card h-fit w-full p-5 lg:w-58"><h2 className="font-extrabold">Refine results</h2><Filter label="Coverage" values={['Central Government','State Government']}/><Filter label="Category" values={categories}/><Filter label="Your location" values={['Telangana','All India']}/></aside><section className="min-w-0 flex-1"><div className="mb-4 flex justify-between"><p className="text-sm text-slate-500"><b className="text-ink">{results.length}</b> schemes found</p><p className="text-xs text-slate-400">Updated directly from Supabase</p></div><div className="grid gap-4 md:grid-cols-2">{results.map(s=><SchemeCard key={s.id} scheme={s} go={go} onSave={onSave} saved={saved.includes(s.id)}/>)}</div>{!results.length&&<div className="card p-10 text-center text-slate-500">No schemes matched those filters. Try a broader search.</div>}</section></div></main></AppShell>
+  return <AppShell page="directory" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-7xl px-5 py-8 lg:px-8"><p className="text-sm font-bold uppercase tracking-widest text-leaf">Scheme directory</p><h1 className="mt-2 text-3xl font-extrabold">Find the support that fits</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Explore scheme records maintained in Supabase. Always check the official link for current conditions.</p><div className="mt-7 flex flex-col gap-3 rounded-2xl border border-[#dbe9e1] bg-white p-3 shadow-sm md:flex-row"><label className="flex flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3"><Search size={19} className="text-slate-400"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search by scheme, need or category" className="w-full bg-transparent py-3 text-sm outline-none"/></label><label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 text-sm"><SlidersHorizontal size={17} className="text-leaf"/><select value={cat} onChange={e=>setCat(e.target.value)} className="bg-transparent py-3 outline-none"><option>All categories</option>{categories.map(x=><option key={x} value={x}>{x}</option>)}</select></label></div><div className="mt-7 flex flex-col gap-6 lg:flex-row"><aside className="card h-fit w-full p-5 lg:sticky lg:top-24 lg:w-64"><div className="flex items-center justify-between gap-3"><h2 className="font-extrabold">Refine results</h2>{hasFilters && <button onClick={clearFilters} className="text-xs font-bold text-leaf hover:underline">Clear all</button>}</div><Filter label="Coverage" values={['Central Government','State Government']} selected={coverage} onToggle={value => toggleFilter(value, setCoverage)}/><Filter label="Category" values={categories} selected={sidebarCategories} onToggle={value => toggleFilter(value, setSidebarCategories)}/><Filter label="Your location" values={['Telangana','All India']} selected={locations} onToggle={value => toggleFilter(value, setLocations)}/></aside><section className="min-w-0 flex-1"><div className="mb-4 flex flex-wrap justify-between gap-2"><p className="text-sm text-slate-500"><b className="text-ink">{results.length}</b> schemes found</p><p className="text-xs text-slate-400">Updated directly from Supabase</p></div><div className="grid gap-4 md:grid-cols-2">{results.map(s=><SchemeCard key={s.id} scheme={s} go={go} onSave={onSave} saved={saved.includes(s.id)}/>)}</div>{!results.length&&<div className="card p-10 text-center text-slate-500">No schemes matched those filters. <button onClick={clearFilters} className="font-bold text-leaf hover:underline">Clear filters</button></div>}</section></div></main></AppShell>
 }
 
-function Filter({label,values}:{label:string;values:string[]}) {return <div className="mt-6 border-t border-slate-100 pt-5"><p className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p><div className="mt-3 space-y-2.5">{values.map(x=><label className="flex items-center gap-2 text-sm text-slate-600" key={x}><input type="checkbox" className="accent-[#1d7a52]"/>{x}</label>)}</div></div>}
+function Filter({label,values,selected,onToggle}:{label:string;values:string[];selected:string[];onToggle:(value:string)=>void}) {return <div className="mt-6 border-t border-slate-100 pt-5"><p className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p><div className="mt-3 space-y-2.5">{values.map(x=><label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600" key={x}><input type="checkbox" checked={selected.includes(x)} onChange={()=>onToggle(x)} className="accent-[#1d7a52]"/>{x}</label>)}</div></div>}
 
 function Detail({id,go,onSave,saved,schemes,user,onLogout}:{id:string;go:(p:Page,id?:string)=>void;onSave:(id:string)=>void;saved:string[];schemes:Scheme[];user?:UserSession['user']|null;onLogout?:()=>void}){
   const scheme = schemes.find(s=>s.id===id || s.name.toLowerCase().includes(id.toLowerCase())) ?? schemes[0] ?? initialSchemes[0];
@@ -619,19 +645,78 @@ function Info({title,children}:{title:string;children:React.ReactNode}){return <
 function Eligibility({id,go,saved,schemes,user,onLogout}:{id?:string;go:(p:Page,id?:string)=>void;saved:string[];schemes:Scheme[];user?:UserSession['user']|null;onLogout?:()=>void}){
   const initialScheme = schemes.find(s => id ? (s.id === id || s.name.toLowerCase().includes(id.toLowerCase())) : false) || schemes[0] || initialSchemes[0];
   const [selected,setSelected]=useState(initialScheme.id);
-  const [run,setRun]=useState(Boolean(id));
+  const [run,setRun]=useState(false);
+  const [result, setResult] = useState<EligibilityResult | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [checkError, setCheckError] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
       const match = schemes.find(s => s.id === id || s.name.toLowerCase().includes(id.toLowerCase()));
       if (match) {
         setSelected(match.id);
-        setRun(true);
+        setRun(false);
+        setResult(null);
       }
     }
   }, [id, schemes]);
 
   const scheme=schemes.find(s=>s.id===selected)??initialScheme;
+  const statusLabel: Record<EligibilityResult['status'], string> = {
+    eligible: 'Likely eligible',
+    possibly_eligible: 'Possibly eligible',
+    not_eligible: 'Criteria not met',
+    insufficient_information: 'More information needed',
+  };
+  const handleCheck = async () => {
+    if (!user) {
+      go('login');
+      return;
+    }
+    setChecking(true);
+    setCheckError(null);
+    setRun(false);
+    try {
+      const nextResult = await schemesApi.checkEligibility(scheme.id);
+      setResult(nextResult);
+      setRun(true);
+    } catch (err: any) {
+      setResult(null);
+      setCheckError(err.message || 'Unable to check eligibility right now');
+    } finally {
+      setChecking(false);
+    }
+  };
+  return (
+    <AppShell page="eligibility" go={go} savedCount={saved.length} user={user} onLogout={onLogout}>
+      <main className="mx-auto max-w-5xl px-5 py-8 lg:px-8">
+        <p className="text-sm font-bold uppercase tracking-widest text-leaf">Eligibility checker</p>
+        <h1 className="mt-2 text-3xl font-extrabold">Understand your likely eligibility</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Your saved profile is compared with the structured requirements for the scheme you choose. This is guidance only; the official authority makes the final decision.</p>
+        <div className="mt-7 card p-5">
+          <label className="text-sm font-bold">Choose a scheme
+            <select value={selected} onChange={e=>{setSelected(e.target.value);setRun(false);setResult(null);setCheckError(null)}} className="mt-2 block w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none">
+              {schemes.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}
+            </select>
+          </label>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 p-4">
+            <div><p className="text-sm font-bold">Profile details used</p><p className="mt-1 text-xs text-slate-500">Your saved state, occupation, and annual family income are used for this check.</p></div>
+            <Button onClick={handleCheck} disabled={checking}><ClipboardCheck size={17}/>{checking ? 'Checking…' : 'Check eligibility'}</Button>
+          </div>
+          {checkError && <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"><span>{checkError}</span>{user && <Button variant="secondary" className="px-3 py-2 text-xs" onClick={()=>go('profile')}>Complete profile</Button>}</div>}
+        </div>
+        {run && result && <div className="mt-7 grid gap-5 lg:grid-cols-[.9fr_1.1fr]">
+          <div className={`rounded-2xl p-6 text-white ${result.status === 'not_eligible' ? 'bg-[#7c3026]' : result.status === 'eligible' ? 'bg-leaf' : 'bg-[#173a35]'}`}>
+            <p className="text-sm font-bold text-[#bfe1c9]">GUIDANCE RESULT</p>
+            <div className="mt-5 flex flex-wrap items-end gap-4"><div className="text-5xl font-extrabold">{result.score}<span className="text-2xl">%</span></div><div className="mb-1 rounded-full bg-white/90 px-3 py-1 text-xs font-extrabold text-ink">{statusLabel[result.status]}</div></div>
+            <p className="mt-5 text-sm leading-6 text-white/80">{result.status === 'not_eligible' ? 'At least one saved detail does not match this scheme’s structured requirements.' : result.status === 'eligible' ? 'Your saved details match the structured requirements currently recorded for this scheme.' : 'Some details match, but add missing information and verify conditions on the official portal.'}</p>
+            <div className="mt-6 border-t border-white/10 pt-5 text-xs text-white/65">{result.disclaimer}</div>
+          </div>
+          <div className="card p-6"><h2 className="font-extrabold">What we found for {scheme.name}</h2><div className="mt-5 grid gap-5 sm:grid-cols-2"><CheckList title="Criteria matched" color="text-leaf" items={result.criteria_matched}/><CheckList title="Criteria not met" color="text-red-600" items={result.criteria_not_matched}/><CheckList title="Missing information" color="text-amber-600" items={result.missing_information}/><CheckList title="Verify officially" color="text-amber-600" items={result.needs_verification || []}/></div><div className="mt-5 rounded-xl bg-[#fff8df] p-4 text-sm leading-6 text-[#6b5817]"><b>Next action:</b> {result.missing_information.length ? 'Complete the missing profile details, then check again.' : `Review required documents (${scheme.documents?.join(', ') || 'Aadhaar, Bank details'}) and confirm the current rules on the official portal.`}</div></div>
+        </div>}
+      </main>
+    </AppShell>
+  );
   return <AppShell page="eligibility" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-5xl px-5 py-8 lg:px-8"><p className="text-sm font-bold uppercase tracking-widest text-leaf">Eligibility checker</p><h1 className="mt-2 text-3xl font-extrabold">Understand your likely eligibility</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">We compare your profile with structured scheme criteria. This is guidance only — the government authority makes the final decision.</p><div className="mt-7 card p-5"><label className="text-sm font-bold">Choose a scheme<select value={selected} onChange={e=>{setSelected(e.target.value);setRun(false)}} className="mt-2 block w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none">{schemes.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></label><div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 p-4"><div><p className="text-sm font-bold">Profile details used</p><p className="mt-1 text-xs text-slate-500">Age 20 · Telangana · Student · Annual income: not added</p></div><Button onClick={()=>setRun(true)}><ClipboardCheck size={17}/> Check eligibility</Button></div></div>{run&&<div className="mt-7 grid gap-5 lg:grid-cols-[.9fr_1.1fr]"><div className="rounded-2xl bg-[#173a35] p-6 text-white"><p className="text-sm font-bold text-[#bfe1c9]">GUIDANCE RESULT</p><div className="mt-5 flex items-end gap-4"><div className="text-5xl font-extrabold">74<span className="text-2xl">%</span></div><div className="mb-1 rounded-full bg-[#dcf3e4] px-3 py-1 text-xs font-extrabold text-leaf">Possibly eligible</div></div><p className="mt-5 text-sm leading-6 text-white/75">Your location and citizen status align with this scheme. Complete your income and occupation details to verify full qualification.</p><div className="mt-6 border-t border-white/10 pt-5 text-xs text-white/65">Confidence reflects criteria completeness and rule matches — it is not an approval prediction.</div></div><div className="card p-6"><h2 className="font-extrabold">What we found for {scheme.name}</h2><div className="mt-5 grid gap-5 sm:grid-cols-2"><CheckList title="Criteria matched" color="text-leaf" items={['Location: India / Telangana','Citizen residency: Verified']}/><CheckList title="Missing information" color="text-amber-600" items={['Annual family income proof','Category / Caste certificate (if required)']}/></div><div className="mt-5 rounded-xl bg-[#fff8df] p-4 text-sm leading-6 text-[#6b5817]"><b>Next action:</b> Check required documents ({scheme.documents?.join(', ') || 'Aadhaar, Bank details'}) and apply directly on the official portal.</div></div></div>}</main></AppShell>}
 function CheckList({title,color,items}:{title:string;color:string;items:string[]}){return <div><p className="text-xs font-bold uppercase tracking-wider text-slate-400">{title}</p><div className="mt-3 space-y-2">{items.map(x=><p className="flex gap-2 text-sm text-slate-600" key={x}><CheckCircle2 className={color} size={17}/>{x}</p>)}</div></div>}
 
@@ -641,6 +726,58 @@ function Saved({go,onSave,saved,schemes,user,onLogout}:{go:(p:Page,id?:string)=>
 }
 
 function Profile({go,saved,user,onLogout}:{go:(p:Page,id?:string)=>void;saved:string[];user?:UserSession['user']|null;onLogout?:()=>void}) { const [edit,setEdit]=useState(false);const [savedForm,setSavedForm]=useState(false);const initials = user?.full_name ? user.full_name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() : (user?.email?.slice(0,2).toUpperCase() || 'AS');const displayName = user?.full_name || user?.email?.split('@')[0] || 'Citizen Profile';return <AppShell page="profile" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-4xl px-5 py-8 lg:px-8"><div className="flex items-end justify-between"><div><p className="text-sm font-bold uppercase tracking-widest text-leaf">Your profile</p><h1 className="mt-2 text-3xl font-extrabold">Personalise your guidance</h1><p className="mt-2 text-sm text-slate-600">Saved securely in your Supabase account. You can update it anytime.</p></div><div className="flex gap-2">{onLogout&&<Button variant="secondary" onClick={onLogout}>Log out</Button>}<Button variant="secondary" onClick={()=>setEdit(!edit)}>{edit?'Cancel':'Edit profile'}</Button></div></div><form className="mt-7 card p-6" onSubmit={e=>{e.preventDefault();setEdit(false);setSavedForm(true)}}><div className="flex items-center gap-4 border-b border-slate-100 pb-6"><div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#d9eee1] text-lg font-extrabold text-leaf">{initials}</div><div><h2 className="font-extrabold">{displayName}</h2><p className="text-sm text-slate-500">{user?.email || 'Logged in user'}</p></div></div><div className="mt-6 grid gap-x-5 gap-y-5 sm:grid-cols-2">{[['Full name',displayName],['Email address',user?.email||''],['Age','20'],['Gender','Female'],['State','Telangana'],['District','Hyderabad'],['Occupation','Student'],['Annual family income',''],['Area type','Urban'],['Social / economic category',''],['Disability status','Not applicable']].map(([label,value])=><label className="text-sm font-bold text-slate-700" key={label}>{label}{edit?<input defaultValue={value} placeholder={label.includes('income')?'Add amount if relevant':'Not added'} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal outline-none"/>:<p className="mt-1.5 rounded-xl bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-600">{value||'Not added'}</p>}</label>)}</div><div className="mt-6 rounded-xl bg-[#fff8df] p-4 text-xs leading-5 text-[#6b5817]"><b>Privacy note:</b> Your profile and activity are protected with Supabase Row Level Security.</div>{edit&&<Button type="submit" className="mt-5">Save changes <Check size={16}/></Button>}{savedForm&&<p className="mt-5 text-sm font-bold text-leaf">Profile updated.</p>}</form></main></AppShell>}
+
+function RealProfile({go,saved,user,onLogout}:{go:(p:Page,id?:string)=>void;saved:string[];user?:UserSession['user']|null;onLogout?:()=>void}) {
+  const [profile, setProfile] = useState<UserProfile>({ full_name: user?.full_name || '' });
+  const [edit, setEdit] = useState(false);
+  const [loading, setLoading] = useState(Boolean(user));
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    void authApi.getProfile().then(data => {
+      if (active && data) setProfile(current => ({ ...current, ...data }));
+    }).catch(() => {
+      if (active) setError('Unable to load your saved profile.');
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
+  }, [user]);
+
+  const setField = <K extends keyof UserProfile>(field: K, value: UserProfile[K]) => {
+    setProfile(current => ({ ...current, [field]: value }));
+  };
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!user) { go('login'); return; }
+    setSaving(true); setError(null); setMessage(null);
+    try {
+      const savedProfile = await authApi.updateProfile(profile);
+      setProfile(savedProfile);
+      setEdit(false);
+      setMessage('Profile saved. Eligibility checks will now use these details.');
+    } catch (err: any) {
+      setError(err.message || 'Unable to save your profile.');
+    } finally {
+      setSaving(false);
+    }
+  };
+  const fields: { key: keyof UserProfile; label: string; type?: string; placeholder?: string }[] = [
+    { key: 'full_name', label: 'Full name' }, { key: 'age', label: 'Age', type: 'number' },
+    { key: 'gender', label: 'Gender' }, { key: 'state', label: 'State' },
+    { key: 'district', label: 'District' }, { key: 'occupation', label: 'Occupation' },
+    { key: 'annual_income', label: 'Annual family income', type: 'number', placeholder: 'e.g. 250000' },
+    { key: 'social_category', label: 'Social / economic category' }, { key: 'disability_status', label: 'Disability status' },
+  ];
+
+  if (!user) return <AppShell page="profile" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-xl px-5 py-16 text-center"><div className="card p-8"><ShieldCheck className="mx-auto text-leaf" size={30}/><h1 className="mt-4 text-2xl font-extrabold">Sign in to create your profile</h1><p className="mt-2 text-sm leading-6 text-slate-600">Your profile is required for personalised scheme eligibility guidance.</p><Button className="mt-6" onClick={()=>go('login')}>Sign in</Button></div></main></AppShell>;
+
+  return <AppShell page="profile" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-4xl px-5 py-8 lg:px-8"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-sm font-bold uppercase tracking-widest text-leaf">Your profile</p><h1 className="mt-2 text-3xl font-extrabold">Personalise your guidance</h1><p className="mt-2 text-sm text-slate-600">These saved details are used by the eligibility checker.</p></div><Button variant="secondary" onClick={()=>{setEdit(value=>!value);setMessage(null)}}>{edit ? 'Cancel' : 'Edit profile'}</Button></div>{error && <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</div>}{message && <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">{message}</div>}<form className="mt-7 card p-6" onSubmit={submit}><div className="flex items-center gap-4 border-b border-slate-100 pb-6"><div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#d9eee1] text-lg font-extrabold text-leaf">{(profile.full_name || user.email).slice(0,2).toUpperCase()}</div><div><h2 className="font-extrabold">{profile.full_name || user.full_name || 'Citizen profile'}</h2><p className="text-sm text-slate-500">{user.email}</p></div></div>{loading ? <p className="py-10 text-center text-sm text-slate-500">Loading profile…</p> : <><div className="mt-6 grid gap-x-5 gap-y-5 sm:grid-cols-2">{fields.map(({key,label,type='text',placeholder})=><label className="text-sm font-bold text-slate-700" key={key}>{label}{edit ? <input type={type} value={profile[key] ?? ''} placeholder={placeholder || 'Not added'} onChange={event=>setField(key, type === 'number' ? (event.target.value === '' ? undefined : Number(event.target.value)) : event.target.value)} className="focus-ring mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal outline-none"/> : <p className="mt-1.5 rounded-xl bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-600">{profile[key] || 'Not added'}</p>}</label>)}<label className="text-sm font-bold text-slate-700">Area type{edit ? <select value={profile.area_type || ''} onChange={event=>setField('area_type', event.target.value as UserProfile['area_type'])} className="focus-ring mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal outline-none"><option value="">Not added</option><option value="urban">Urban</option><option value="rural">Rural</option></select> : <p className="mt-1.5 rounded-xl bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-600">{profile.area_type || 'Not added'}</p>}</label></div><div className="mt-6 rounded-xl bg-[#fff8df] p-4 text-xs leading-5 text-[#6b5817]"><b>Privacy note:</b> Only the details needed for guidance are used. The final decision always belongs to the relevant government authority.</div>{edit && <Button type="submit" className="mt-5" disabled={saving}>{saving ? 'Saving…' : 'Save profile'} <Check size={16}/></Button>}</>}</form></main></AppShell>;
+}
 
 function History({go,saved,user,onLogout,schemes}:{go:(p:Page,id?:string)=>void;saved:string[];user?:UserSession['user']|null;onLogout?:()=>void;schemes?:Scheme[]}){
   return <AppShell page="history" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-5xl px-5 py-8 lg:px-8"><h1 className="text-3xl font-extrabold">Eligibility history</h1><p className="mt-2 text-sm text-slate-600">Revisit past guidance results. Requirements may change, so re-check before applying.</p><div className="mt-7 overflow-hidden rounded-2xl border border-[#dce9e2] bg-white"><div className="grid grid-cols-[1.5fr_.8fr_.8fr_auto] gap-3 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-400"><span>Scheme</span><span className="hidden sm:block">Checked</span><span>Status</span><span></span></div>{[['National Scholarship Portal','Today','Possibly eligible','nsp'],['PM-KISAN','2 Sep 2026','Insufficient info','pm-kisan']].map(([name,date,status,id])=>{
@@ -956,7 +1093,31 @@ function Chat({go,saved,schemeId,schemes,user,onLogout}:{go:(p:Page,id?:string)=
                 <div className={`relative max-w-[85%] rounded-2xl p-4 text-sm leading-6 ${
                   isBot ? 'rounded-tl-xs bg-white text-slate-800 shadow-sm border border-slate-100' : 'rounded-tr-xs bg-leaf text-white'
                 }`}>
-                  <div className="whitespace-pre-wrap">{m.text}</div>
+                  {isBot ? (
+                    <ReactMarkdown
+                      components={{
+                        h1: ({ children }) => <h1 className="mb-3 text-lg font-extrabold text-ink">{children}</h1>,
+                        h2: ({ children }) => <h2 className="mb-2 mt-4 text-base font-extrabold text-ink">{children}</h2>,
+                        h3: ({ children }) => <h3 className="mb-2 mt-3 text-sm font-extrabold text-ink">{children}</h3>,
+                        h4: ({ children }) => <h4 className="mb-2 mt-3 text-sm font-bold text-ink">{children}</h4>,
+                        p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
+                        ul: ({ children }) => <ul className="mb-3 list-disc space-y-1 pl-5 last:mb-0">{children}</ul>,
+                        ol: ({ children }) => <ol className="mb-3 list-decimal space-y-1 pl-5 last:mb-0">{children}</ol>,
+                        li: ({ children }) => <li>{children}</li>,
+                        a: ({ children, href }) => (
+                          <a href={href} target="_blank" rel="noreferrer" className="font-semibold text-leaf underline underline-offset-2 hover:text-[#155e3e]">
+                            {children}
+                          </a>
+                        ),
+                        strong: ({ children }) => <strong className="font-extrabold text-ink">{children}</strong>,
+                        hr: () => <hr className="my-4 border-slate-200" />,
+                      }}
+                    >
+                      {m.text}
+                    </ReactMarkdown>
+                  ) : (
+                    <div className="whitespace-pre-wrap">{m.text}</div>
+                  )}
 
                   {isBot && m.scheme && (
                     <div className="mt-4 rounded-xl border border-[#cbe4d7] bg-[#f4faf6] p-3 text-xs">
@@ -1068,10 +1229,8 @@ function Chat({go,saved,schemeId,schemes,user,onLogout}:{go:(p:Page,id?:string)=
   </AppShell>;
 }
 
-function Admin({go,schemes,onRefresh,user}:{go:(p:Page,id?:string)=>void;schemes:Scheme[];onRefresh:()=>Promise<void>;user?:UserSession['user']|null}) {
-  const [authed, setAuthed] = useState(() => Boolean(user?.email?.toLowerCase().includes('admin')));
-  const [adminEmail, setAdminEmail] = useState('admin@sahayakai.co.in');
-  const [adminPassword, setAdminPassword] = useState('');
+function Admin({go,schemes,onRefresh,user,onLogout}:{go:(p:Page,id?:string)=>void;schemes:Scheme[];onRefresh:()=>Promise<void>;user?:UserSession['user']|null;onLogout?:()=>void}) {
+  const isAdmin = isAdminUser(user);
   const [showAddModal, setShowAddModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [seeding, setSeeding] = useState(false);
@@ -1092,12 +1251,6 @@ function Admin({go,schemes,onRefresh,user}:{go:(p:Page,id?:string)=>void;schemes
   const [residency, setResidency] = useState('Indian resident');
   const [occupation, setOccupation] = useState('');
   const [income, setIncome] = useState('');
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthed(true);
-    setFeedback({ type: 'success', text: 'Signed in as Administrator to Supabase database.' });
-  };
 
   const handleAddScheme = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1167,26 +1320,23 @@ function Admin({go,schemes,onRefresh,user}:{go:(p:Page,id?:string)=>void;schemes
     }
   };
 
-  if (!authed) {
+  if (!isAdmin) {
     return (
       <div className="grid min-h-screen place-items-center bg-sand p-5">
-        <div className="card w-full max-w-md p-8 shadow-soft">
+        <div className="card w-full max-w-md p-8 text-center shadow-soft">
           <Logo/>
-          <div className="mt-8 grid h-12 w-12 place-items-center rounded-2xl bg-mint text-leaf">
+          <div className="mx-auto mt-8 grid h-12 w-12 place-items-center rounded-2xl bg-amber-50 text-amber-800">
             <ShieldCheck size={26}/>
           </div>
-          <h1 className="mt-4 text-2xl font-extrabold text-ink">Admin Dashboard Login</h1>
+          <p className="mt-5 text-xs font-bold uppercase tracking-widest text-amber-800">Restricted area</p>
+          <h1 className="mt-2 text-2xl font-extrabold text-ink">Administrator access required</h1>
           <p className="mt-1 text-sm text-slate-600">
-            Sign in to manage government schemes and documents directly in Supabase.
+            Sign in with an authorised administrator account to manage government scheme records.
           </p>
-          <form className="mt-6 space-y-4" onSubmit={handleLogin}>
-            <Field label="Admin email" placeholder="admin@organisation.gov.in" type="email" value={adminEmail} onChange={e => setAdminEmail(e.target.value)}/>
-            <Field label="Password" placeholder="••••••••" type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)}/>
-            <Button type="submit" className="w-full">Sign in to Admin Dashboard</Button>
-          </form>
-          <button onClick={() => go(user ? 'dashboard' : 'home')} className="mt-6 block text-center text-sm font-bold text-leaf hover:underline">
-            Return to Citizen Portal
-          </button>
+          <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+            {!user && <Button className="flex-1" onClick={() => go('login')}>Sign in</Button>}
+            <Button variant="secondary" className="flex-1" onClick={() => go(user ? 'dashboard' : 'home')}>Return to citizen portal</Button>
+          </div>
         </div>
       </div>
     );
@@ -1198,15 +1348,18 @@ function Admin({go,schemes,onRefresh,user}:{go:(p:Page,id?:string)=>void;schemes
 
   return (
     <div className="min-h-screen bg-[#f6f8f7]">
-      <header className="flex h-16 items-center justify-between border-b bg-white px-5 lg:px-8">
-        <button onClick={() => go(user ? 'dashboard' : 'home')} className="text-left"><Logo/></button>
+      <header className="sticky top-0 z-30 border-b border-[#dce9e2] bg-white/95 backdrop-blur">
+        <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-3 px-5 py-2 lg:px-8">
+        <button onClick={() => go('dashboard')} className="shrink-0 text-left"><Logo/></button>
         <div className="flex items-center gap-3">
           <span className="hidden rounded-full bg-mint px-3 py-1 text-xs font-bold text-leaf sm:block">
             ● Supabase Database Active
           </span>
-          <Button variant="ghost" onClick={() => go(user ? 'dashboard' : 'home')}>
-            <LogOut size={16}/> Exit Admin
+          <Button variant="secondary" className="hidden sm:inline-flex" onClick={() => go('dashboard')}>
+            <LayoutDashboard size={15}/> Citizen view
           </Button>
+          {onLogout && <button onClick={onLogout} title="Log out" aria-label="Log out" className="rounded-xl border border-slate-200 bg-white p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-600"><LogOut size={16}/></button>}
+        </div>
         </div>
       </header>
 
@@ -1222,10 +1375,10 @@ function Admin({go,schemes,onRefresh,user}:{go:(p:Page,id?:string)=>void;schemes
 
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
-            <p className="text-sm font-bold uppercase tracking-widest text-leaf">Management Portal</p>
+            <p className="text-sm font-bold uppercase tracking-widest text-leaf">Management portal</p>
             <h1 className="mt-1 text-3xl font-extrabold text-ink">Admin Scheme Management</h1>
             <p className="mt-1 text-sm text-slate-600">
-              Add, update, or remove government schemes stored in the Supabase database.
+              Publish new scheme records, review current entries, or remove outdated information.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -1455,9 +1608,9 @@ export default function App(){
   const [schemes, setSchemes] = useState<Scheme[]>(initialSchemes);
   const [loadingSchemes, setLoadingSchemes] = useState(false);
 
-  const loadSchemes = async () => {
+  const loadSchemes = useCallback(async (silent = false) => {
     try {
-      setLoadingSchemes(true);
+      if (!silent) setLoadingSchemes(true);
       const data = await schemesApi.getSchemes();
       if (data && data.length > 0) {
         setSchemes(data);
@@ -1465,13 +1618,26 @@ export default function App(){
     } catch (err) {
       console.warn('Using initial scheme cache:', err);
     } finally {
-      setLoadingSchemes(false);
+      if (!silent) setLoadingSchemes(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadSchemes();
-  }, []);
+    void loadSchemes();
+
+    const refreshWhenActive = () => {
+      if (document.visibilityState === 'visible') void loadSchemes(true);
+    };
+    const refreshTimer = window.setInterval(() => void loadSchemes(true), 30_000);
+
+    window.addEventListener('focus', refreshWhenActive);
+    document.addEventListener('visibilitychange', refreshWhenActive);
+    return () => {
+      window.clearInterval(refreshTimer);
+      window.removeEventListener('focus', refreshWhenActive);
+      document.removeEventListener('visibilitychange', refreshWhenActive);
+    };
+  }, [loadSchemes]);
 
   const go=(p:Page,id?:string)=>{
     if(id)setSelected(id);
@@ -1500,8 +1666,7 @@ export default function App(){
   if(page==='eligibility')return <Eligibility id={selected} go={go} saved={saved} schemes={schemes} user={user} onLogout={logout}/>;
   if(page==='saved')return <Saved go={go} onSave={toggleSave} saved={saved} schemes={schemes} user={user} onLogout={logout}/>;
   if(page==='history')return <History go={go} saved={saved} user={user} onLogout={logout} schemes={schemes}/>;
-  if(page==='profile')return <Profile go={go} saved={saved} user={user} onLogout={logout}/>;
+  if(page==='profile')return <RealProfile go={go} saved={saved} user={user} onLogout={logout}/>;
   if(page==='chat')return <Chat go={go} saved={saved} schemeId={selected} schemes={schemes} user={user} onLogout={logout}/>;
-  return <Admin go={go} schemes={schemes} onRefresh={loadSchemes} user={user}/>;
+  return <Admin go={go} schemes={schemes} onRefresh={loadSchemes} user={user} onLogout={logout}/>;
 }
-

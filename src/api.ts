@@ -9,6 +9,29 @@ export interface UserSession {
   };
 }
 
+export interface UserProfile {
+  full_name?: string;
+  age?: number;
+  gender?: string;
+  state?: string;
+  district?: string;
+  occupation?: string;
+  annual_income?: number;
+  social_category?: string;
+  area_type?: 'rural' | 'urban';
+  disability_status?: string;
+}
+
+export interface EligibilityResult {
+  status: 'eligible' | 'possibly_eligible' | 'not_eligible' | 'insufficient_information';
+  score: number;
+  criteria_matched: string[];
+  criteria_not_matched: string[];
+  missing_information: string[];
+  needs_verification?: string[];
+  disclaimer: string;
+}
+
 export interface SchemeItem {
   id: string;
   name: string;
@@ -117,14 +140,28 @@ export const authApi = {
     this.clearSession();
   },
 
-  async getProfile() {
+  async getProfile(): Promise<UserProfile | null> {
     const token = this.getToken();
     if (!token) return null;
     const res = await fetch(`${API_BASE}/profile`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return null;
-    return res.json();
+    const data = await res.json();
+    return data.profile || null;
+  },
+
+  async updateProfile(profile: UserProfile): Promise<UserProfile> {
+    const token = this.getToken();
+    if (!token) throw new Error('Please sign in to save your profile');
+    const res = await fetch(`${API_BASE}/profile`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(profile),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Unable to save your profile');
+    return data.profile;
   },
 };
 
@@ -214,6 +251,18 @@ export const schemesApi = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Failed to seed schemes');
     return data;
+  },
+
+  async checkEligibility(id: string): Promise<EligibilityResult> {
+    const token = authApi.getToken();
+    if (!token) throw new Error('Please sign in to check eligibility');
+    const res = await fetch(`${API_BASE}/schemes/${id}/eligibility-check`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Unable to check eligibility');
+    return data.result;
   },
 };
 

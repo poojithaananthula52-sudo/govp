@@ -115,7 +115,7 @@ class ProfileUpdate(BaseModel):
     district: str | None = None
     occupation: str | None = None
     annual_income: float | None = Field(default=None, ge=0)
-    category: str | None = None
+    social_category: str | None = None
     area_type: Literal["rural", "urban"] | None = None
     disability_status: str | None = None
     family_size: int | None = Field(default=None, ge=1)
@@ -486,7 +486,93 @@ def seed_schemes(admin_id: str = Depends(require_admin)):
 
 @app.post("/schemes/{scheme_id}/eligibility-check")
 def eligibility_check(scheme_id: str, user_id: str = Depends(current_user)):
-    return {"scheme_id": scheme_id, "checked_at": datetime.now(timezone.utc), "result": evaluate({}, [])}
+    if not admin_supabase:
+        raise HTTPException(503, "Profile and eligibility services are not configured")
+
+    profile_response = admin_supabase.table("profiles").select("*").eq("user_id", user_id).maybe_single().execute()
+    profile = profile_response.data
+    if not profile:
+        raise HTTPException(400, "Complete your profile before checking eligibility")
+
+    scheme = None
+    try:
+        scheme_response = admin_supabase.table("schemes").select("*").eq("id", scheme_id).maybe_single().execute()
+        if scheme_response.data:
+            scheme = format_scheme_row(scheme_response.data)
+    except Exception:
+        pass
+    if not scheme:
+        scheme = next((item for item in DEFAULT_SCHEMES if item["id"] == scheme_id), None)
+    if not scheme:
+        raise HTTPException(404, "Scheme not found")
+
+    matched: list[str] = []
+    unmatched: list[str] = []
+    missing: list[str] = []
+    needs_verification: list[str] = []
+    rules = scheme.get("rules") or {}
+
+    for field, expected in rules.items():
+        expected_text = str(expected).strip()
+        if field == "residency":
+            if profile.get("state"):
+                matched.append(f"Residence recorded: {profile['state']}")
+            else:
+                missing.append("State of residence")
+            continue
+
+        if field == "occupation":
+            actual = str(profile.get("occupation") or "").strip()
+            if not actual:
+                missing.append("Occupation")
+            elif expected_text.lower() in actual.lower() or actual.lower() in expected_text.lower():
+                matched.append(f"Occupation: {actual}")
+            else:
+                unmatched.append(f"Occupation must match: {expected_text}")
+            continue
+
+        if field == "income":
+            income = profile.get("annual_income")
+            if income is None:
+                missing.append("Annual family income")
+            else:
+                matched.append("Annual family income provided")
+                if any(word in expected_text.lower() for word in ("varies", "criteria", "category", "apply")):
+                    needs_verification.append("Official income threshold must be verified on the scheme portal")
+            continue
+
+        actual = profile.get(field)
+        if actual in (None, ""):
+            missing.append(field.replace("_", " ").title())
+        elif str(actual).lower() == expected_text.lower():
+            matched.append(field.replace("_", " ").title())
+        else:
+            unmatched.append(f"{field.replace('_', ' ').title()} must match: {expected_text}")
+
+    if not rules:
+        needs_verification.append("This scheme has no structured eligibility rules yet; verify the official notification")
+
+    total = max(len(rules), 1)
+    score = round(100 * (len(matched) + 0.5 * len(missing)) / total)
+    if unmatched:
+        status = "not_eligible"
+    elif missing and not matched:
+        status = "insufficient_information"
+    elif missing or needs_verification:
+        status = "possibly_eligible"
+    else:
+        status = "eligible"
+
+    result = {
+        "status": status,
+        "score": score,
+        "criteria_matched": matched,
+        "criteria_not_matched": unmatched,
+        "missing_information": missing,
+        "needs_verification": needs_verification,
+        "disclaimer": "This is guidance only. Final eligibility and approval are determined by the relevant government authority.",
+    }
+    return {"scheme_id": scheme_id, "checked_at": datetime.now(timezone.utc), "result": result}
 
 @app.get("/eligibility/history")
 def eligibility_history(user_id: str = Depends(current_user)): return {"data": []}
@@ -571,8 +657,8 @@ INSTRUCTIONS:
 
     # 3. Deterministic high-quality application guidance fallback
     if target_scheme:
-        docs_list = "\n".join([f"  • **{d}**" for d in target_scheme["documents"]])
-        rules_list = "\n".join([f"  • **{k.title()}**: {v}" for k, v in target_scheme["rules"].items()]) if target_scheme["rules"] else "  • Valid Indian citizenship & eligibility as defined in the official guidelines."
+        docs_list = "\n".join([f"- **{d}**" for d in target_scheme["documents"]])
+        rules_list = "\n".join([f"- **{k.title()}**: {v}" for k, v in target_scheme["rules"].items()]) if target_scheme["rules"] else "- Valid Indian citizenship & eligibility as defined in the official guidelines."
         app_url = target_scheme.get("application_url") or target_scheme["link"]
 
         answer = f"""### 📋 Step-by-Step Guide: How to Apply for **{target_scheme['name']}**
@@ -602,7 +688,7 @@ Before starting your application, keep clear digital and physical copies ready:
 🔗 **Official Portal**: [{target_scheme['link']}]({target_scheme['link']})  
 ⚠️ *Notice: Sahayak AI provides informational guidance. Final eligibility and benefit disbursement are determined solely by the relevant government department.*"""
     else:
-        schemes_bullets = "\n".join([f"• **{s['name']}** ({s['category']}): {s['benefit']}" for s in all_schemes[:5]])
+        schemes_bullets = "\n".join([f"- **{s['name']}** ({s['category']}): {s['benefit']}" for s in all_schemes[:5]])
         answer = f"""Hello! I can guide you step-by-step on how to apply for official government schemes, what documents you need, and the right portal to visit.
 
 Here are popular active schemes you can ask about:
