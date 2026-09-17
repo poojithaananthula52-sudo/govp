@@ -136,23 +136,23 @@ function Auth({ page, go, login }: { page: Page; go:(p:Page)=>void; login:(user:
         <p className="mt-5 leading-7 text-white/70">Find official scheme information, understand the steps, and keep your application preparation on track.</p>
         <div className="mt-10 border-t border-white/10 pt-6 text-sm text-white/65">“A simple starting point for navigating public-service support.”</div>
       </div>
-      <p className="text-xs text-white/40">Sahayak AI · Supabase Authentication</p>
+      <p className="text-xs text-white/40">Sahayak AI · Secure Authentication</p>
     </div>
     <div className="flex items-center justify-center p-5">
       <div className="w-full max-w-md">
         <button onClick={()=>go('home')} className="mb-10 flex items-center gap-2 text-sm font-bold text-leaf"><ChevronRight className="rotate-180" size={17}/> Back to home</button>
         <h2 className="text-3xl font-extrabold">{isForgot?'Reset your password':signup?'Create your account':'Welcome back'}</h2>
-        <p className="mt-2 text-sm text-slate-600">{isForgot?'Enter your email and we’ll send reset instructions.':signup?'Create a user account directly connected to Supabase.':'Log in with your Supabase account to access schemes and profile.'}</p>
+        <p className="mt-2 text-sm text-slate-600">{isForgot?'Enter your email and we’ll send reset instructions.':signup?'Create a user account to access schemes and profile.':'Log in with your account to access schemes and profile.'}</p>
         {error && <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</div>}
         {sent?<div className="mt-8 rounded-2xl border border-[#cde5d7] bg-mint p-5 text-sm leading-6"><CheckCircle2 className="mb-2 text-leaf"/>If an account exists for this email, reset instructions have been sent.</div>:<form className="mt-8 space-y-4" onSubmit={handleSubmit}>
           {signup&&<Field label="Full name" placeholder="Your name" value={fullName} onChange={e=>setFullName(e.target.value)}/>}
           <Field label="Email address" placeholder="you@example.com" type="email" value={email} onChange={e=>setEmail(e.target.value)}/>
           {!isForgot&&<Field label="Password" placeholder="•••••••• (min 8 chars)" type="password" value={password} onChange={e=>setPassword(e.target.value)}/>}
           {!signup&&!isForgot&&<button type="button" onClick={()=>go('forgot')} className="block ml-auto -mt-1 text-xs font-bold text-leaf">Forgot password?</button>}
-          <Button type="submit" className="mt-2 w-full" disabled={loading}>{loading ? 'Connecting to Supabase...' : isForgot?'Send reset link':signup?'Create user in Supabase':'Log in'} <ArrowRight size={17}/></Button>
+          <Button type="submit" className="mt-2 w-full" disabled={loading}>{loading ? 'Please wait...' : isForgot?'Send reset link':signup?'Create account':'Log in'} <ArrowRight size={17}/></Button>
         </form>}
         {!isForgot&&<p className="mt-6 text-center text-sm text-slate-600">{signup?'Already have an account?':'New to Sahayak AI?'} <button className="font-bold text-leaf" onClick={()=>{setError(null);go(signup?'login':'signup')}}>{signup?'Log in':'Create an account'}</button></p>}
-        <p className="mt-8 text-center text-[11px] leading-5 text-slate-400">Powered by Supabase Auth with Row Level Security.</p>
+        <p className="mt-8 text-center text-[11px] leading-5 text-slate-400">Protected with secure authentication and access controls.</p>
       </div>
     </div>
   </div>
@@ -334,7 +334,7 @@ function Dashboard({
             <div className="flex items-center gap-2">
               <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <p className="text-xs font-bold uppercase tracking-wider text-leaf">
-                Supabase Connected · {schemes.length} Active Schemes
+                Live Portal · {schemes.length} Active Schemes
               </p>
             </div>
             <h1 className="mt-1 text-3xl font-extrabold text-ink">
@@ -349,7 +349,7 @@ function Dashboard({
             <button
               onClick={onRefresh}
               disabled={loadingSchemes}
-              title="Sync latest schemes from Supabase"
+              title="Sync latest schemes"
               className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition shadow-sm disabled:opacity-60"
             >
               <RefreshCw size={14} className={loadingSchemes ? "animate-spin text-leaf" : "text-leaf"}/>
@@ -369,7 +369,7 @@ function Dashboard({
               <Sparkles size={18} className="text-leaf"/>
             </div>
             <p className="mt-2 text-3xl font-extrabold text-ink">{String(schemes.length).padStart(2, '0')}</p>
-            <p className="mt-1 text-xs text-slate-500">Live in Supabase database</p>
+            <p className="mt-1 text-xs text-slate-500">Live verified schemes</p>
           </button>
 
           <button onClick={() => go('saved')} className="card text-left p-4 transition hover:border-[#9fcdb5] hover:shadow-soft">
@@ -413,7 +413,7 @@ function Dashboard({
                     </span>
                     <h2 className="text-xl font-extrabold text-ink">Newly Added Schemes</h2>
                   </div>
-                  <p className="mt-1 text-sm text-slate-500">Recent government schemes published directly in Supabase</p>
+                  <p className="mt-1 text-sm text-slate-500">Recent government schemes published in official portal</p>
                 </div>
                 <button onClick={() => go('directory')} className="text-sm font-bold text-leaf hover:underline">
                   View all ({schemes.length}) <ArrowRight className="inline" size={15}/>
@@ -631,7 +631,7 @@ function Directory({go,onSave,saved,schemes,user,onLogout}:{go:(p:Page,id?:strin
     return textMatches && categoryMatches && coverageMatches && locationMatches;
   }),[schemes,query,cat,coverage,sidebarCategories,locations]);
 
-  return <AppShell page="directory" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-7xl px-5 py-8 lg:px-8"><p className="text-sm font-bold uppercase tracking-widest text-leaf">Scheme directory</p><h1 className="mt-2 text-3xl font-extrabold">Find the support that fits</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Explore scheme records maintained in Supabase. Always check the official link for current conditions.</p><div className="mt-7 flex flex-col gap-3 rounded-2xl border border-[#dbe9e1] bg-white p-3 shadow-sm md:flex-row"><label className="flex flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3"><Search size={19} className="text-slate-400"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search by scheme, need or category" className="w-full bg-transparent py-3 text-sm outline-none"/></label><label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 text-sm"><SlidersHorizontal size={17} className="text-leaf"/><select value={cat} onChange={e=>setCat(e.target.value)} className="bg-transparent py-3 outline-none"><option>All categories</option>{categories.map(x=><option key={x} value={x}>{x}</option>)}</select></label></div><div className="mt-7 flex flex-col gap-6 lg:flex-row"><aside className="card h-fit w-full p-5 lg:sticky lg:top-24 lg:w-64"><div className="flex items-center justify-between gap-3"><h2 className="font-extrabold">Refine results</h2>{hasFilters && <button onClick={clearFilters} className="text-xs font-bold text-leaf hover:underline">Clear all</button>}</div><Filter label="Coverage" values={['Central Government','State Government']} selected={coverage} onToggle={value => toggleFilter(value, setCoverage)}/><Filter label="Category" values={categories} selected={sidebarCategories} onToggle={value => toggleFilter(value, setSidebarCategories)}/><Filter label="Your location" values={['Telangana','All India']} selected={locations} onToggle={value => toggleFilter(value, setLocations)}/></aside><section className="min-w-0 flex-1"><div className="mb-4 flex flex-wrap justify-between gap-2"><p className="text-sm text-slate-500"><b className="text-ink">{results.length}</b> schemes found</p><p className="text-xs text-slate-400">Updated directly from Supabase</p></div><div className="grid gap-4 md:grid-cols-2">{results.map(s=><SchemeCard key={s.id} scheme={s} go={go} onSave={onSave} saved={saved.includes(s.id)}/>)}</div>{!results.length&&<div className="card p-10 text-center text-slate-500">No schemes matched those filters. <button onClick={clearFilters} className="font-bold text-leaf hover:underline">Clear filters</button></div>}</section></div></main></AppShell>
+  return <AppShell page="directory" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-7xl px-5 py-8 lg:px-8"><p className="text-sm font-bold uppercase tracking-widest text-leaf">Scheme directory</p><h1 className="mt-2 text-3xl font-extrabold">Find the support that fits</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Explore verified scheme records. Always check the official link for current conditions.</p><div className="mt-7 flex flex-col gap-3 rounded-2xl border border-[#dbe9e1] bg-white p-3 shadow-sm md:flex-row"><label className="flex flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3"><Search size={19} className="text-slate-400"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search by scheme, need or category" className="w-full bg-transparent py-3 text-sm outline-none"/></label><label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 text-sm"><SlidersHorizontal size={17} className="text-leaf"/><select value={cat} onChange={e=>setCat(e.target.value)} className="bg-transparent py-3 outline-none"><option>All categories</option>{categories.map(x=><option key={x} value={x}>{x}</option>)}</select></label></div><div className="mt-7 flex flex-col gap-6 lg:flex-row"><aside className="card h-fit w-full p-5 lg:sticky lg:top-24 lg:w-64"><div className="flex items-center justify-between gap-3"><h2 className="font-extrabold">Refine results</h2>{hasFilters && <button onClick={clearFilters} className="text-xs font-bold text-leaf hover:underline">Clear all</button>}</div><Filter label="Coverage" values={['Central Government','State Government']} selected={coverage} onToggle={value => toggleFilter(value, setCoverage)}/><Filter label="Category" values={categories} selected={sidebarCategories} onToggle={value => toggleFilter(value, setSidebarCategories)}/><Filter label="Your location" values={['Telangana','All India']} selected={locations} onToggle={value => toggleFilter(value, setLocations)}/></aside><section className="min-w-0 flex-1"><div className="mb-4 flex flex-wrap justify-between gap-2"><p className="text-sm text-slate-500"><b className="text-ink">{results.length}</b> schemes found</p><p className="text-xs text-slate-400">Updated directly from verified records</p></div><div className="grid gap-4 md:grid-cols-2">{results.map(s=><SchemeCard key={s.id} scheme={s} go={go} onSave={onSave} saved={saved.includes(s.id)}/>)}</div>{!results.length&&<div className="card p-10 text-center text-slate-500">No schemes matched those filters. <button onClick={clearFilters} className="font-bold text-leaf hover:underline">Clear filters</button></div>}</section></div></main></AppShell>
 }
 
 function Filter({label,values,selected,onToggle}:{label:string;values:string[];selected:string[];onToggle:(value:string)=>void}) {return <div className="mt-6 border-t border-slate-100 pt-5"><p className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p><div className="mt-3 space-y-2.5">{values.map(x=><label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600" key={x}><input type="checkbox" checked={selected.includes(x)} onChange={()=>onToggle(x)} className="accent-[#1d7a52]"/>{x}</label>)}</div></div>}
@@ -725,7 +725,7 @@ function Saved({go,onSave,saved,schemes,user,onLogout}:{go:(p:Page,id?:string)=>
   return <AppShell page="saved" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-5xl px-5 py-8 lg:px-8"><h1 className="text-3xl font-extrabold">Saved schemes</h1><p className="mt-2 text-sm text-slate-600">Keep useful schemes together and return when you are ready.</p>{items.length?<div className="mt-7 space-y-3">{items.map(s=><div className="card flex flex-col gap-4 p-5 sm:flex-row sm:items-center" key={s.id}><div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-mint text-leaf"><Landmark size={20}/></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h2 className="font-extrabold">{s.name}</h2><span className="rounded-full bg-mint px-2 py-0.5 text-[10px] font-bold text-leaf">{s.category}</span></div><p className="mt-1 text-sm text-slate-500">Saved today · Documents: {s.documents?.length || 0} required</p></div><div className="flex gap-2"><Button variant="secondary" onClick={()=>go('detail',s.id)}>View</Button><button title="Remove saved scheme" onClick={()=>onSave(s.id)} className="rounded-xl border border-slate-200 p-2.5 text-slate-400 hover:text-red-500"><X size={18}/></button></div></div>)}</div>:<div className="card mt-7 p-12 text-center"><Heart className="mx-auto text-[#99cbb0]" size={32}/><h2 className="mt-4 font-extrabold">Nothing saved yet</h2><p className="mt-1 text-sm text-slate-500">Save schemes to compare them later.</p><Button className="mt-5" onClick={()=>go('directory')}>Browse schemes</Button></div>}</main></AppShell>
 }
 
-function Profile({go,saved,user,onLogout}:{go:(p:Page,id?:string)=>void;saved:string[];user?:UserSession['user']|null;onLogout?:()=>void}) { const [edit,setEdit]=useState(false);const [savedForm,setSavedForm]=useState(false);const initials = user?.full_name ? user.full_name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() : (user?.email?.slice(0,2).toUpperCase() || 'AS');const displayName = user?.full_name || user?.email?.split('@')[0] || 'Citizen Profile';return <AppShell page="profile" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-4xl px-5 py-8 lg:px-8"><div className="flex items-end justify-between"><div><p className="text-sm font-bold uppercase tracking-widest text-leaf">Your profile</p><h1 className="mt-2 text-3xl font-extrabold">Personalise your guidance</h1><p className="mt-2 text-sm text-slate-600">Saved securely in your Supabase account. You can update it anytime.</p></div><div className="flex gap-2">{onLogout&&<Button variant="secondary" onClick={onLogout}>Log out</Button>}<Button variant="secondary" onClick={()=>setEdit(!edit)}>{edit?'Cancel':'Edit profile'}</Button></div></div><form className="mt-7 card p-6" onSubmit={e=>{e.preventDefault();setEdit(false);setSavedForm(true)}}><div className="flex items-center gap-4 border-b border-slate-100 pb-6"><div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#d9eee1] text-lg font-extrabold text-leaf">{initials}</div><div><h2 className="font-extrabold">{displayName}</h2><p className="text-sm text-slate-500">{user?.email || 'Logged in user'}</p></div></div><div className="mt-6 grid gap-x-5 gap-y-5 sm:grid-cols-2">{[['Full name',displayName],['Email address',user?.email||''],['Age','20'],['Gender','Female'],['State','Telangana'],['District','Hyderabad'],['Occupation','Student'],['Annual family income',''],['Area type','Urban'],['Social / economic category',''],['Disability status','Not applicable']].map(([label,value])=><label className="text-sm font-bold text-slate-700" key={label}>{label}{edit?<input defaultValue={value} placeholder={label.includes('income')?'Add amount if relevant':'Not added'} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal outline-none"/>:<p className="mt-1.5 rounded-xl bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-600">{value||'Not added'}</p>}</label>)}</div><div className="mt-6 rounded-xl bg-[#fff8df] p-4 text-xs leading-5 text-[#6b5817]"><b>Privacy note:</b> Your profile and activity are protected with Supabase Row Level Security.</div>{edit&&<Button type="submit" className="mt-5">Save changes <Check size={16}/></Button>}{savedForm&&<p className="mt-5 text-sm font-bold text-leaf">Profile updated.</p>}</form></main></AppShell>}
+function Profile({go,saved,user,onLogout}:{go:(p:Page,id?:string)=>void;saved:string[];user?:UserSession['user']|null;onLogout?:()=>void}) { const [edit,setEdit]=useState(false);const [savedForm,setSavedForm]=useState(false);const initials = user?.full_name ? user.full_name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() : (user?.email?.slice(0,2).toUpperCase() || 'AS');const displayName = user?.full_name || user?.email?.split('@')[0] || 'Citizen Profile';return <AppShell page="profile" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-4xl px-5 py-8 lg:px-8"><div className="flex items-end justify-between"><div><p className="text-sm font-bold uppercase tracking-widest text-leaf">Your profile</p><h1 className="mt-2 text-3xl font-extrabold">Personalise your guidance</h1><p className="mt-2 text-sm text-slate-600">Saved securely in your account. You can update it anytime.</p></div><div className="flex gap-2">{onLogout&&<Button variant="secondary" onClick={onLogout}>Log out</Button>}<Button variant="secondary" onClick={()=>setEdit(!edit)}>{edit?'Cancel':'Edit profile'}</Button></div></div><form className="mt-7 card p-6" onSubmit={e=>{e.preventDefault();setEdit(false);setSavedForm(true)}}><div className="flex items-center gap-4 border-b border-slate-100 pb-6"><div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#d9eee1] text-lg font-extrabold text-leaf">{initials}</div><div><h2 className="font-extrabold">{displayName}</h2><p className="text-sm text-slate-500">{user?.email || 'Logged in user'}</p></div></div><div className="mt-6 grid gap-x-5 gap-y-5 sm:grid-cols-2">{[['Full name',displayName],['Email address',user?.email||''],['Age','20'],['Gender','Female'],['State','Telangana'],['District','Hyderabad'],['Occupation','Student'],['Annual family income',''],['Area type','Urban'],['Social / economic category',''],['Disability status','Not applicable']].map(([label,value])=><label className="text-sm font-bold text-slate-700" key={label}>{label}{edit?<input defaultValue={value} placeholder={label.includes('income')?'Add amount if relevant':'Not added'} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal outline-none"/>:<p className="mt-1.5 rounded-xl bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-600">{value||'Not added'}</p>}</label>)}</div><div className="mt-6 rounded-xl bg-[#fff8df] p-4 text-xs leading-5 text-[#6b5817]"><b>Privacy note:</b> Your profile and activity are protected with encrypted security controls.</div>{edit&&<Button type="submit" className="mt-5">Save changes <Check size={16}/></Button>}{savedForm&&<p className="mt-5 text-sm font-bold text-leaf">Profile updated.</p>}</form></main></AppShell>}
 
 function RealProfile({go,saved,user,onLogout}:{go:(p:Page,id?:string)=>void;saved:string[];user?:UserSession['user']|null;onLogout?:()=>void}) {
   const [profile, setProfile] = useState<UserProfile>({ full_name: user?.full_name || '' });
@@ -1278,7 +1278,7 @@ function Admin({go,schemes,onRefresh,user,onLogout}:{go:(p:Page,id?:string)=>voi
       });
       await onRefresh();
       setShowAddModal(false);
-      setFeedback({ type: 'success', text: `Scheme "${name}" successfully saved to Supabase!` });
+      setFeedback({ type: 'success', text: `Scheme "${name}" successfully saved to database!` });
       // Reset form
       setName('');
       setDepartment('');
@@ -1296,11 +1296,11 @@ function Admin({go,schemes,onRefresh,user,onLogout}:{go:(p:Page,id?:string)=>voi
   };
 
   const handleDelete = async (scheme: Scheme) => {
-    if (!window.confirm(`Are you sure you want to delete "${scheme.name}" from Supabase?`)) return;
+    if (!window.confirm(`Are you sure you want to delete "${scheme.name}" from database?`)) return;
     try {
       await schemesApi.adminDeleteScheme(scheme.id);
       await onRefresh();
-      setFeedback({ type: 'success', text: `Scheme "${scheme.name}" deleted from Supabase.` });
+      setFeedback({ type: 'success', text: `Scheme "${scheme.name}" deleted from database.` });
     } catch (err: any) {
       setFeedback({ type: 'error', text: err.message || 'Failed to delete scheme' });
     }
@@ -1312,7 +1312,7 @@ function Admin({go,schemes,onRefresh,user,onLogout}:{go:(p:Page,id?:string)=>voi
     try {
       const res = await schemesApi.adminSeedSchemes();
       await onRefresh();
-      setFeedback({ type: 'success', text: `Seeded ${res.seeded_count} official government schemes into Supabase!` });
+      setFeedback({ type: 'success', text: `Seeded ${res.seeded_count} official government schemes into database!` });
     } catch (err: any) {
       setFeedback({ type: 'error', text: err.message || 'Failed to seed schemes' });
     } finally {
@@ -1353,7 +1353,7 @@ function Admin({go,schemes,onRefresh,user,onLogout}:{go:(p:Page,id?:string)=>voi
         <button onClick={() => go('dashboard')} className="shrink-0 text-left"><Logo/></button>
         <div className="flex items-center gap-3">
           <span className="hidden rounded-full bg-mint px-3 py-1 text-xs font-bold text-leaf sm:block">
-            ● Supabase Database Active
+            ● Secure Database Active
           </span>
           <Button variant="secondary" className="hidden sm:inline-flex" onClick={() => go('dashboard')}>
             <LayoutDashboard size={15}/> Citizen view
@@ -1394,7 +1394,7 @@ function Admin({go,schemes,onRefresh,user,onLogout}:{go:(p:Page,id?:string)=>voi
 
         <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            ['Active Schemes in DB', schemes.length, Landmark, 'Total in Supabase'],
+            ['Active Schemes in DB', schemes.length, Landmark, 'Total in database'],
             ['Central Government', centralCount, Sparkles, 'National coverage'],
             ['State / Regional', stateCount, MapPin, 'State-level schemes'],
             ['Online Application', onlineCount, ExternalLink, 'With direct portal links']
@@ -1417,7 +1417,7 @@ function Admin({go,schemes,onRefresh,user,onLogout}:{go:(p:Page,id?:string)=>voi
           <div className="flex flex-col gap-3 border-b p-5 sm:flex-row sm:items-center sm:justify-between bg-white">
             <div>
               <h2 className="font-extrabold text-lg text-ink">Government Scheme Records ({schemes.length})</h2>
-              <p className="mt-0.5 text-xs text-slate-500">Live data synchronised with Supabase</p>
+              <p className="mt-0.5 text-xs text-slate-500">Live data synchronised with database</p>
             </div>
             <Button variant="ghost" onClick={() => onRefresh()} className="text-xs font-bold">
               <RefreshCw size={14}/> Refresh DB
@@ -1497,7 +1497,7 @@ function Admin({go,schemes,onRefresh,user,onLogout}:{go:(p:Page,id?:string)=>voi
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
                 <h2 className="text-xl font-extrabold text-ink">Add Government Scheme</h2>
-                <p className="text-xs text-slate-500">Scheme will be saved into Supabase and made visible to citizens.</p>
+                <p className="text-xs text-slate-500">Scheme will be saved to database and made visible to citizens.</p>
               </div>
               <button onClick={() => setShowAddModal(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100">
                 <X size={20}/>
@@ -1589,7 +1589,7 @@ function Admin({go,schemes,onRefresh,user,onLogout}:{go:(p:Page,id?:string)=>voi
               <div className="mt-6 flex justify-end gap-3 border-t border-slate-100 pt-4">
                 <Button variant="secondary" onClick={() => setShowAddModal(false)}>Cancel</Button>
                 <Button type="submit" disabled={submitting}>
-                  {submitting ? 'Saving to Supabase...' : 'Save Scheme to Supabase'}
+                  {submitting ? 'Saving...' : 'Save Scheme'}
                 </Button>
               </div>
             </form>
