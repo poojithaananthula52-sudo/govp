@@ -68,6 +68,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def root():
+    return {"status": "ok", "message": "Sahayak AI API is running", "docs": "/docs"}
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
+
 def current_user(authorization: str | None = Header(default=None)) -> str:
     """Validate a Supabase access token before allowing private API access."""
     if not authorization or not authorization.startswith("Bearer "):
