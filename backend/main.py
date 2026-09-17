@@ -16,13 +16,14 @@ from dotenv import load_dotenv
 from supabase import Client, create_client
 from google import genai
 
-# DNS patch: Bypasses local ISP (ACT Fibernet) DNS hijacking for Supabase domains
-_orig_getaddrinfo = socket.getaddrinfo
-def _patched_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
-    if host and "supabase.co" in host:
-        return _orig_getaddrinfo("104.18.38.10", port, family, type, proto, flags)
-    return _orig_getaddrinfo(host, port, family, type, proto, flags)
-socket.getaddrinfo = _patched_getaddrinfo
+# DNS patch: Bypasses local ISP (ACT Fibernet) DNS hijacking for Supabase domains on local dev
+if not os.getenv("RENDER") and not os.getenv("RAILWAY_ENVIRONMENT") and not os.getenv("VERCEL"):
+    _orig_getaddrinfo = socket.getaddrinfo
+    def _patched_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+        if host and "supabase.co" in host:
+            return _orig_getaddrinfo("104.18.38.10", port, family, type, proto, flags)
+        return _orig_getaddrinfo(host, port, family, type, proto, flags)
+    socket.getaddrinfo = _patched_getaddrinfo
 
 load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -46,8 +47,26 @@ if GEMINI_API_KEY and len(GEMINI_API_KEY) > 20:
     except Exception:
         gemini_client = None
 
+allowed_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://govp.vercel.app",
+]
+if FRONTEND_URL:
+    for url in FRONTEND_URL.split(","):
+        clean_url = url.strip().rstrip("/")
+        if clean_url and clean_url not in allowed_origins:
+            allowed_origins.append(clean_url)
+
 app = FastAPI(title="Sahayak AI API", version="1.0.0")
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*(\.vercel\.app|\.onrender\.com)",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def current_user(authorization: str | None = Header(default=None)) -> str:
     """Validate a Supabase access token before allowing private API access."""
