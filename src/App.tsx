@@ -409,9 +409,6 @@ function Dashboard({
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-800 uppercase tracking-wide">
-                      ⚡ Live Database
-                    </span>
                     <h2 className="text-xl font-extrabold text-ink">Newly Added Schemes</h2>
                   </div>
                   <p className="mt-1 text-sm text-slate-500">Recent government schemes published in official portal</p>
@@ -768,11 +765,17 @@ function RealProfile({go,saved,user,onLogout}:{go:(p:Page,id?:string)=>void;save
     }
   };
   const occupationOptions = ['Student', 'Farmer', 'Teacher', 'Government Employee', 'Private Employee', 'Business', 'Self-employed', 'Artisan/Craftsperson', 'Labourer', 'Homemaker', 'Unemployed', 'Other'];
+  const genderOptions = ['Male', 'Female', 'Transgender', 'Prefer not to say'];
+  const disabilityStatusOptions = ['Yes', 'No', 'Prefer not to say'];
+  const socioEconomicCategoryOptions = ['BPL', 'Low Income', 'Middle Income', 'High Income', 'Prefer not to say'];
   const normaliseOption = (value: string | undefined, options: string[]) => options.find(option => option.toLowerCase() === value?.toLowerCase()) || value || '';
   const selectedState = normaliseOption(profile.state, indianStates);
   const districtOptions = selectedState ? districtsByState[selectedState] || [] : [];
   const selectedDistrict = normaliseOption(profile.district, districtOptions);
   const selectedOccupation = normaliseOption(profile.occupation, occupationOptions);
+  const selectedGender = normaliseOption(profile.gender, genderOptions);
+  const selectedDisabilityStatus = normaliseOption(profile.disability_status, disabilityStatusOptions);
+  const selectedSocioEconomicCategory = normaliseOption(profile.social_category, socioEconomicCategoryOptions);
   const fields: { key: keyof UserProfile; label: string; type?: string; placeholder?: string }[] = [
     { key: 'full_name', label: 'Full name' },
     { key: 'age', label: 'Age', type: 'number' },
@@ -845,6 +848,33 @@ function RealProfile({go,saved,user,onLogout}:{go:(p:Page,id?:string)=>void;save
                     <select value={selectedOccupation} onChange={event => setField('occupation', event.target.value)} className={selectClass}>
                       <option value="">Not added</option>
                       {occupationOptions.map(occupation => <option value={occupation} key={occupation}>{occupation}</option>)}
+                    </select>
+                  </label>;
+                }
+
+                if (key === 'gender') {
+                  return <label className="text-sm font-bold text-slate-700" key={key}>{label}
+                    <select value={selectedGender} onChange={event => setField('gender', event.target.value)} className={selectClass}>
+                      <option value="">Not added</option>
+                      {genderOptions.map(gender => <option value={gender} key={gender}>{gender}</option>)}
+                    </select>
+                  </label>;
+                }
+
+                if (key === 'disability_status') {
+                  return <label className="text-sm font-bold text-slate-700" key={key}>{label}
+                    <select value={selectedDisabilityStatus} onChange={event => setField('disability_status', event.target.value)} className={selectClass}>
+                      <option value="">Not added</option>
+                      {disabilityStatusOptions.map(status => <option value={status} key={status}>{status}</option>)}
+                    </select>
+                  </label>;
+                }
+
+                if (key === 'social_category') {
+                  return <label className="text-sm font-bold text-slate-700" key={key}>{label}
+                    <select value={selectedSocioEconomicCategory} onChange={event => setField('social_category', event.target.value)} className={selectClass}>
+                      <option value="">Not added</option>
+                      {socioEconomicCategoryOptions.map(category => <option value={category} key={category}>{category}</option>)}
                     </select>
                   </label>;
                 }
@@ -1441,9 +1471,6 @@ function Admin({go,schemes,onRefresh,user,onLogout}:{go:(p:Page,id?:string)=>voi
         <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-3 px-5 py-2 lg:px-8">
         <button onClick={() => go('dashboard')} className="shrink-0 text-left"><Logo/></button>
         <div className="flex items-center gap-3">
-          <span className="hidden rounded-full bg-mint px-3 py-1 text-xs font-bold text-leaf sm:block">
-            ● Secure Database Active
-          </span>
           <Button variant="secondary" className="hidden sm:inline-flex" onClick={() => go('dashboard')}>
             <LayoutDashboard size={15}/> Citizen view
           </Button>
