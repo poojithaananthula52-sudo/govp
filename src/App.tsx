@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { authApi, schemesApi, aiApi, EligibilityResult, UserProfile, UserSession, SchemeItem } from './api'
+import { districtsByState, indianStates } from './indiaLocations'
 import {
   ArrowRight, BadgeCheck, Bell, BookOpen, Bot, Check, CheckCircle2, ChevronRight,
   CircleHelp, ClipboardCheck, FileText, Heart, Landmark, LogOut, Menu, Search,
@@ -766,17 +767,105 @@ function RealProfile({go,saved,user,onLogout}:{go:(p:Page,id?:string)=>void;save
       setSaving(false);
     }
   };
+  const occupationOptions = ['Student', 'Farmer', 'Teacher', 'Government Employee', 'Private Employee', 'Business', 'Self-employed', 'Artisan/Craftsperson', 'Labourer', 'Homemaker', 'Unemployed', 'Other'];
+  const normaliseOption = (value: string | undefined, options: string[]) => options.find(option => option.toLowerCase() === value?.toLowerCase()) || value || '';
+  const selectedState = normaliseOption(profile.state, indianStates);
+  const districtOptions = selectedState ? districtsByState[selectedState] || [] : [];
+  const selectedDistrict = normaliseOption(profile.district, districtOptions);
+  const selectedOccupation = normaliseOption(profile.occupation, occupationOptions);
   const fields: { key: keyof UserProfile; label: string; type?: string; placeholder?: string }[] = [
-    { key: 'full_name', label: 'Full name' }, { key: 'age', label: 'Age', type: 'number' },
-    { key: 'gender', label: 'Gender' }, { key: 'state', label: 'State' },
-    { key: 'district', label: 'District' }, { key: 'occupation', label: 'Occupation' },
+    { key: 'full_name', label: 'Full name' },
+    { key: 'age', label: 'Age', type: 'number' },
+    { key: 'gender', label: 'Gender' },
+    { key: 'state', label: 'State' }, { key: 'district', label: 'District' }, { key: 'occupation', label: 'Occupation' },
     { key: 'annual_income', label: 'Annual family income', type: 'number', placeholder: 'e.g. 250000' },
     { key: 'social_category', label: 'Social / economic category' }, { key: 'disability_status', label: 'Disability status' },
   ];
 
   if (!user) return <AppShell page="profile" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-xl px-5 py-16 text-center"><div className="card p-8"><ShieldCheck className="mx-auto text-leaf" size={30}/><h1 className="mt-4 text-2xl font-extrabold">Sign in to create your profile</h1><p className="mt-2 text-sm leading-6 text-slate-600">Your profile is required for personalised scheme eligibility guidance.</p><Button className="mt-6" onClick={()=>go('login')}>Sign in</Button></div></main></AppShell>;
 
-  return <AppShell page="profile" go={go} savedCount={saved.length} user={user} onLogout={onLogout}><main className="mx-auto max-w-4xl px-5 py-8 lg:px-8"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-sm font-bold uppercase tracking-widest text-leaf">Your profile</p><h1 className="mt-2 text-3xl font-extrabold">Personalise your guidance</h1><p className="mt-2 text-sm text-slate-600">These saved details are used by the eligibility checker.</p></div><Button variant="secondary" onClick={()=>{setEdit(value=>!value);setMessage(null)}}>{edit ? 'Cancel' : 'Edit profile'}</Button></div>{error && <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</div>}{message && <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">{message}</div>}<form className="mt-7 card p-6" onSubmit={submit}><div className="flex items-center gap-4 border-b border-slate-100 pb-6"><div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#d9eee1] text-lg font-extrabold text-leaf">{(profile.full_name || user.email).slice(0,2).toUpperCase()}</div><div><h2 className="font-extrabold">{profile.full_name || user.full_name || 'Citizen profile'}</h2><p className="text-sm text-slate-500">{user.email}</p></div></div>{loading ? <p className="py-10 text-center text-sm text-slate-500">Loading profile…</p> : <><div className="mt-6 grid gap-x-5 gap-y-5 sm:grid-cols-2">{fields.map(({key,label,type='text',placeholder})=><label className="text-sm font-bold text-slate-700" key={key}>{label}{edit ? <input type={type} value={profile[key] ?? ''} placeholder={placeholder || 'Not added'} onChange={event=>setField(key, type === 'number' ? (event.target.value === '' ? undefined : Number(event.target.value)) : event.target.value)} className="focus-ring mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal outline-none"/> : <p className="mt-1.5 rounded-xl bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-600">{profile[key] || 'Not added'}</p>}</label>)}<label className="text-sm font-bold text-slate-700">Area type{edit ? <select value={profile.area_type || ''} onChange={event=>setField('area_type', event.target.value as UserProfile['area_type'])} className="focus-ring mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal outline-none"><option value="">Not added</option><option value="urban">Urban</option><option value="rural">Rural</option></select> : <p className="mt-1.5 rounded-xl bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-600">{profile.area_type || 'Not added'}</p>}</label></div><div className="mt-6 rounded-xl bg-[#fff8df] p-4 text-xs leading-5 text-[#6b5817]"><b>Privacy note:</b> Only the details needed for guidance are used. The final decision always belongs to the relevant government authority.</div>{edit && <Button type="submit" className="mt-5" disabled={saving}>{saving ? 'Saving…' : 'Save profile'} <Check size={16}/></Button>}</>}</form></main></AppShell>;
+  return (
+    <AppShell page="profile" go={go} savedCount={saved.length} user={user} onLogout={onLogout}>
+      <main className="mx-auto max-w-4xl px-5 py-8 lg:px-8">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-widest text-leaf">Your profile</p>
+            <h1 className="mt-2 text-3xl font-extrabold">Personalise your guidance</h1>
+            <p className="mt-2 text-sm text-slate-600">These saved details are used by the eligibility checker.</p>
+          </div>
+          <Button variant="secondary" onClick={() => { setEdit(value => !value); setMessage(null); }}>
+            {edit ? 'Cancel' : 'Edit profile'}
+          </Button>
+        </div>
+        {error && <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</div>}
+        {message && <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">{message}</div>}
+        <form className="mt-7 card p-6" onSubmit={submit}>
+          <div className="flex items-center gap-4 border-b border-slate-100 pb-6">
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#d9eee1] text-lg font-extrabold text-leaf">
+              {(profile.full_name || user.email).slice(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <h2 className="font-extrabold">{profile.full_name || user.full_name || 'Citizen profile'}</h2>
+              <p className="text-sm text-slate-500">{user.email}</p>
+            </div>
+          </div>
+          {loading ? <p className="py-10 text-center text-sm text-slate-500">Loading profile…</p> : <>
+            <div className="mt-6 grid gap-x-5 gap-y-5 sm:grid-cols-2">
+              {fields.map(({ key, label, type = 'text', placeholder }) => {
+                const value = profile[key];
+                const selectClass = "focus-ring mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal outline-none";
+                const inputClass = "focus-ring mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-normal outline-none";
+
+                if (!edit) {
+                  return <label className="text-sm font-bold text-slate-700" key={key}>{label}
+                    <p className="mt-1.5 rounded-xl bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-600">{value || 'Not added'}</p>
+                  </label>;
+                }
+
+                if (key === 'state') {
+                  return <label className="text-sm font-bold text-slate-700" key={key}>{label}
+                    <select value={selectedState} onChange={event => setProfile(current => ({ ...current, state: event.target.value, district: '' }))} className={selectClass}>
+                      <option value="">Not added</option>
+                      {indianStates.map(state => <option value={state} key={state}>{state}</option>)}
+                    </select>
+                  </label>;
+                }
+
+                if (key === 'district') {
+                  return <label className="text-sm font-bold text-slate-700" key={key}>{label}
+                    <select value={selectedDistrict} disabled={!selectedState} onChange={event => setField('district', event.target.value)} className={`${selectClass} disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400`}>
+                      <option value="">{selectedState ? 'Not added' : 'Select state first'}</option>
+                      {districtOptions.map(district => <option value={district} key={district}>{district}</option>)}
+                    </select>
+                  </label>;
+                }
+
+                if (key === 'occupation') {
+                  return <label className="text-sm font-bold text-slate-700" key={key}>{label}
+                    <select value={selectedOccupation} onChange={event => setField('occupation', event.target.value)} className={selectClass}>
+                      <option value="">Not added</option>
+                      {occupationOptions.map(occupation => <option value={occupation} key={occupation}>{occupation}</option>)}
+                    </select>
+                  </label>;
+                }
+
+                return <label className="text-sm font-bold text-slate-700" key={key}>{label}
+                  <input type={type} value={value ?? ''} placeholder={placeholder || 'Not added'} onChange={event => setField(key, type === 'number' ? (event.target.value === '' ? undefined : Number(event.target.value)) : event.target.value)} className={inputClass}/>
+                </label>;
+              })}
+              <label className="text-sm font-bold text-slate-700">Area type
+                {edit ? <select value={profile.area_type || ''} onChange={event => setField('area_type', event.target.value as UserProfile['area_type'])} className="focus-ring mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal outline-none">
+                  <option value="">Not added</option><option value="urban">Urban</option><option value="rural">Rural</option>
+                </select> : <p className="mt-1.5 rounded-xl bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-600">{profile.area_type || 'Not added'}</p>}
+              </label>
+            </div>
+            <div className="mt-6 rounded-xl bg-[#fff8df] p-4 text-xs leading-5 text-[#6b5817]"><b>Privacy note:</b> Only the details needed for guidance are used. The final decision always belongs to the relevant government authority.</div>
+            {edit && <Button type="submit" className="mt-5" disabled={saving}>{saving ? 'Saving…' : 'Save profile'} <Check size={16}/></Button>}
+          </>}
+        </form>
+      </main>
+    </AppShell>
+  );
 }
 
 function History({go,saved,user,onLogout,schemes}:{go:(p:Page,id?:string)=>void;saved:string[];user?:UserSession['user']|null;onLogout?:()=>void;schemes?:Scheme[]}){
